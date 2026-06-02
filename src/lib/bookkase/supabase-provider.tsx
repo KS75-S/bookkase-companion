@@ -27,7 +27,6 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         detectSessionInUrl: false,
       },
       // Supabase JS v2.45+: callback re-runs per request so token stays fresh.
-      // @ts-expect-error - `accessToken` is supported at runtime in @supabase/supabase-js >= 2.45
       accessToken: async () => {
         if (!isLoaded) return null;
         try {

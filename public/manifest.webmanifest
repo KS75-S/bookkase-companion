@@ -1,0 +1,26 @@
+{
+  "name": "BookKase Companion",
+  "short_name": "BookKase",
+  "description": "Your personal literary sanctuary, in your pocket.",
+  "start_url": "/reading",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6efe2",
+  "theme_color": "#1a1a2e",
+  "categories": ["books", "lifestyle", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

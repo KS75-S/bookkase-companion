@@ -6,36 +6,75 @@ import { OmbreProgress } from "./OmbreProgress";
 import { UpdateProgressSheet } from "./UpdateProgressSheet";
 import { AddMomentSheet } from "./AddMomentSheet";
 
+function parseTimestampSeconds(v: string): number | null {
+  const parts = v.split(":").map((p) => parseInt(p, 10));
+  if (parts.some((n) => Number.isNaN(n))) return null;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 1) return parts[0];
+  return null;
+}
+
 function formatProgressLabel(ub: UserBook): string {
   const t = ub.progress_type;
   const v = ub.progress_value;
   if (!t || !v) return "—";
-  if (t === "percentage") return `${parseInt(v, 10)}%`;
+  if (t === "percentage") {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? `${Math.round(n)}%` : v;
+  }
   if (t === "page") {
     const total = ub.book?.total_pages;
     return total ? `Page ${v} of ${total}` : `Page ${v}`;
   }
-  if (t === "chapter") return `Chapter ${v}`;
+  if (t === "chapter") {
+    const total = ub.book?.total_chapters;
+    return total ? `Chapter ${v} of ${total}` : `Chapter ${v}`;
+  }
   if (t === "timestamp") return v;
   return v;
 }
 
-function progressFraction(ub: UserBook): number {
+/**
+ * Returns a 0-1 fraction when the metadata needed to compute it exists,
+ * otherwise null so the UI can show an empty/neutral bar instead of 0%.
+ */
+function progressFraction(ub: UserBook): number | null {
   const t = ub.progress_type;
   const v = ub.progress_value;
-  if (!t || !v) return 0;
-  if (t === "percentage") return Math.min(1, parseFloat(v) / 100);
-  if (t === "page" && ub.book?.total_pages) {
-    return Math.min(1, parseInt(v, 10) / ub.book.total_pages);
+  if (!t || !v) return null;
+  if (t === "percentage") {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? Math.max(0, Math.min(1, n / 100)) : null;
   }
-  if (t === "timestamp" && ub.book?.total_duration_seconds) {
-    const parts = v.split(":").map((p) => parseInt(p, 10) || 0);
-    let secs = 0;
-    if (parts.length === 3) secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
-    else if (parts.length === 2) secs = parts[0] * 60 + parts[1];
-    return Math.min(1, secs / ub.book.total_duration_seconds);
+  if (t === "page") {
+    const total = ub.book?.total_pages;
+    const cur = parseInt(v, 10);
+    if (!total || !Number.isFinite(cur)) return null;
+    return Math.max(0, Math.min(1, cur / total));
   }
-  return 0;
+  if (t === "chapter") {
+    const total = ub.book?.total_chapters;
+    const cur = parseInt(v, 10);
+    if (!total || !Number.isFinite(cur)) return null;
+    return Math.max(0, Math.min(1, cur / total));
+  }
+  if (t === "timestamp") {
+    const total = ub.book?.total_duration_seconds;
+    const cur = parseTimestampSeconds(v);
+    if (!total || cur == null) return null;
+    return Math.max(0, Math.min(1, cur / total));
+  }
+  return null;
+}
+
+function missingMetadataHint(ub: UserBook): string | null {
+  const t = ub.progress_type;
+  if (!t) return null;
+  if (t === "page" && !ub.book?.total_pages) return "Total pages needed to calculate reading progress.";
+  if (t === "chapter" && !ub.book?.total_chapters) return "Total chapters needed to calculate reading progress.";
+  if (t === "timestamp" && !ub.book?.total_duration_seconds) return "Total duration needed to calculate listening progress.";
+  return null;
 }
 
 export function BookCard({ ub }: { ub: UserBook }) {

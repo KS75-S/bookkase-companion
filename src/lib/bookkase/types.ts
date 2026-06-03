@@ -6,6 +6,7 @@ export interface Book {
   author: string | null;
   cover_url: string | null;
   total_pages: number | null;
+  total_chapters: number | null;
   total_duration_seconds: number | null;
 }
 

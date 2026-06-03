@@ -3,13 +3,19 @@ import { useUser } from "@clerk/clerk-react";
 
 import { useSupabase } from "./supabase-provider";
 import {
-  ACTIVE_STATUSES,
+  ACTIVE_STATUS_VALUES,
   TABLES,
+  normalizeStatus,
   type BookStatus,
   type ProgressType,
 } from "./schema";
 import type { JourneyEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";
+
+const DEV = import.meta.env.DEV;
+function devLog(...args: unknown[]) {
+  if (DEV) console.debug("[bookkase]", ...args);
+}
 
 function genId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -28,10 +34,20 @@ export function useActiveBooks() {
       const { data, error } = await supabase
         .from(TABLES.userBooks)
         .select(`*, book:${TABLES.books}(*)`)
-        .in("status", ACTIVE_STATUSES)
+        .in("status", ACTIVE_STATUS_VALUES)
         .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as UserBook[];
+      if (error) {
+        if (DEV) console.error("[bookkase] active books load failed", error);
+        throw error;
+      }
+      const rows = (data ?? []) as unknown as UserBook[];
+      // Normalize legacy/display status strings to canonical values for the UI.
+      const normalized = rows.map((r) => {
+        const n = normalizeStatus(r.status as unknown as string);
+        return n ? ({ ...r, status: n } as UserBook) : r;
+      });
+      devLog("active books loaded", { count: normalized.length });
+      return normalized;
     },
   });
 }
@@ -48,7 +64,11 @@ export function useJourney(limit = 50) {
         .select(`*, book:${TABLES.books}(*)`)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (error) throw error;
+      if (error) {
+        if (DEV) console.error("[bookkase] journey load failed", error);
+        throw error;
+      }
+      devLog("journey loaded", { count: data?.length ?? 0 });
       return (data ?? []) as unknown as JourneyEntry[];
     },
   });
@@ -71,6 +91,7 @@ export function useUpdateProgress() {
       if (!user) throw new Error("Not signed in");
       const id = genId();
       const createdAt = new Date().toISOString();
+      devLog("update progress", { id, ...input });
       await enqueueWrite({
         kind: "progress",
         id,
@@ -83,7 +104,6 @@ export function useUpdateProgress() {
         createdAt,
         attempts: 0,
       });
-      // optimistic flush
       await flushQueue(supabase);
       return { id };
     },
@@ -110,6 +130,7 @@ export function useAddMoment() {
       if (!user) throw new Error("Not signed in");
       const id = genId();
       const createdAt = new Date().toISOString();
+      devLog("add moment", { id, ...input });
       await enqueueWrite({
         kind: "moment",
         id,
@@ -134,8 +155,12 @@ export function useManualSync() {
   const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => flushQueue(supabase),
-    onSuccess: () => {
+    mutationFn: async () => {
+      devLog("manual sync triggered");
+      return flushQueue(supabase);
+    },
+    onSuccess: (res) => {
+      devLog("manual sync result", res);
       qc.invalidateQueries({ queryKey: ["bookkase"] });
     },
   });

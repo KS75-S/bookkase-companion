@@ -42,7 +42,7 @@ function Section({
 function EmptyState() {
   return (
     <div className="bk-card mt-6 px-6 py-12 text-center">
-      <h2 className="bk-display text-2xl text-foreground">Your story begins here</h2>
+      <h2 className="bk-display text-2xl text-foreground">No active reading sessions found.</h2>
       <p className="bk-accent mt-3 text-base text-muted-foreground">
         Books you're reading or listening to will appear here.
       </p>

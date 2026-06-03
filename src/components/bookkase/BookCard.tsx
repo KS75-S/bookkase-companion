@@ -113,8 +113,11 @@ export function BookCard({ ub }: { ub: UserBook }) {
             {ub.status === "listening" ? "Listening" : ub.status === "rereading" ? "Rereading" : "Reading"}
           </p>
           <div className="mt-3">
-            <OmbreProgress value={fraction} />
+            <OmbreProgress value={fraction ?? 0} />
             <p className="mt-1.5 text-xs text-muted-foreground">{formatProgressLabel(ub)}</p>
+            {missingMetadataHint(ub) ? (
+              <p className="mt-1 text-[11px] text-muted-foreground/80">{missingMetadataHint(ub)}</p>
+            ) : null}
           </div>
         </div>
       </div>

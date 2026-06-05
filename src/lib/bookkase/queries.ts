@@ -155,6 +155,31 @@ export function useAddMoment() {
   });
 }
 
+export function useDeleteJourneyEntry() {
+  const supabase = useSupabase();
+  const qc = useQueryClient();
+  const { user } = useUser();
+  return useMutation({
+    mutationFn: async (entryId: string) => {
+      if (!user) throw new Error("Not signed in");
+      devLog("delete journey entry", { entryId });
+      const { error } = await supabase
+        .from(TABLES.journey)
+        .delete()
+        .eq("id", entryId)
+        .eq("user_id", user.id);
+      if (error) {
+        if (DEV) console.error("[bookkase] delete journey entry failed", error);
+        throw error;
+      }
+      return { id: entryId };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookkase", "journey"] });
+    },
+  });
+}
+
 export function useManualSync() {
   const supabase = useSupabase();
   const qc = useQueryClient();

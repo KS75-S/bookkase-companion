@@ -31,9 +31,11 @@ export function useActiveBooks() {
     enabled: !!isSignedIn && !!user,
     queryKey: ["bookkase", "active-books", user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from(TABLES.userBooks)
         .select(`*, book:${TABLES.books}(*)`)
+        .eq("user_id", user.id)
         .in("status", ACTIVE_STATUS_VALUES)
         .order("updated_at", { ascending: false });
       if (error) {
@@ -59,9 +61,11 @@ export function useJourney(limit = 50) {
     enabled: !!isSignedIn && !!user,
     queryKey: ["bookkase", "journey", user?.id, limit],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from(TABLES.journey)
         .select(`*, book:${TABLES.books}(*)`)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) {

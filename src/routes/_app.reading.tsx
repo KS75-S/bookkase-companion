@@ -67,11 +67,12 @@ function ReadingPage() {
   }
 
   if (error) {
+    if (import.meta.env.DEV) console.error("[bookkase] reading load error", error);
     return (
       <div className="bk-card mt-6 p-6 text-center">
         <p className="bk-display text-lg">We couldn't reach your library</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          {(error as Error).message}
+          Something went wrong loading your books. Please try again.
         </p>
         <button className="bk-pill mt-4" onClick={() => refetch()}>
           Try again

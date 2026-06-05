@@ -43,10 +43,13 @@ function JourneyPage() {
   }
 
   if (error) {
+    if (import.meta.env.DEV) console.error("[bookkase] journey load error", error);
     return (
       <div className="bk-card mt-6 p-6 text-center">
         <p className="bk-display text-lg">Couldn't load your journey</p>
-        <p className="mt-2 text-sm text-muted-foreground">{(error as Error).message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Something went wrong loading your journey. Please try again.
+        </p>
         <button className="bk-pill mt-4" onClick={() => refetch()}>Try again</button>
       </div>
     );

@@ -1,42 +1,25 @@
 /**
- * BookKase wordmark.
- *
- * Drop the official SVG at `public/bookkase-wordmark.svg` and this component
- * will use it automatically. Until then it renders a styled fallback in
- * Libre Baskerville so the brand voice still shows through.
+ * BookKase wordmark — official light/dark variants served from CDN.
  */
-import { useEffect, useState } from "react";
+import lightWordmark from "@/assets/bookkase-wordmark-light.png.asset.json";
+import darkWordmark from "@/assets/bookkase-wordmark-dark.png.asset.json";
 
 export function Wordmark({ className = "" }: { className?: string }) {
-  const [hasAsset, setHasAsset] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/bookkase-wordmark.svg", { method: "HEAD" })
-      .then((r) => !cancelled && setHasAsset(r.ok))
-      .catch(() => !cancelled && setHasAsset(false));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (hasAsset) {
-    return (
+  return (
+    <picture className={`inline-block ${className}`}>
+      <source srcSet={darkWordmark.url} media="(prefers-color-scheme: dark)" />
       <img
-        src="/bookkase-wordmark.svg"
-        alt="BookKase"
-        className={`h-7 w-auto select-none ${className}`}
+        src={lightWordmark.url}
+        alt="BookKase wordmark"
+        className="h-10 w-auto select-none dark:hidden"
         draggable={false}
       />
-    );
-  }
-
-  return (
-    <span
-      className={`bk-display select-none text-[1.35rem] leading-none tracking-[-0.01em] text-foreground ${className}`}
-      aria-label="BookKase"
-    >
-      Book<span className="text-[color:var(--indigo)]">Kase</span>
-    </span>
+      <img
+        src={darkWordmark.url}
+        alt="BookKase wordmark"
+        className="hidden h-10 w-auto select-none dark:block"
+        draggable={false}
+      />
+    </picture>
   );
 }

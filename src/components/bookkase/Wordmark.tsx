@@ -1,17 +1,17 @@
 /**
  * BookKase wordmark — official light/dark variants served from CDN.
+ * Switches via the app's `dark` class (not OS prefers-color-scheme).
  */
 import lightWordmark from "@/assets/bookkase-wordmark-light.png.asset.json";
 import darkWordmark from "@/assets/bookkase-wordmark-dark.png.asset.json";
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <picture className={`inline-block ${className}`}>
-      <source srcSet={darkWordmark.url} media="(prefers-color-scheme: dark)" />
+    <span className={`inline-block ${className}`}>
       <img
         src={lightWordmark.url}
         alt="BookKase wordmark"
-        className="h-10 w-auto select-none dark:hidden"
+        className="block h-10 w-auto select-none dark:hidden"
         draggable={false}
       />
       <img
@@ -20,6 +20,6 @@ export function Wordmark({ className = "" }: { className?: string }) {
         className="hidden h-10 w-auto select-none dark:block"
         draggable={false}
       />
-    </picture>
+    </span>
   );
 }

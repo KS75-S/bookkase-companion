@@ -180,6 +180,44 @@ export function useDeleteJourneyEntry() {
   });
 }
 
+export interface UpdateJourneyEntryInput {
+  entryId: string;
+  note?: string | null;
+  progressType?: ProgressType | null;
+  progressValue?: string | null;
+}
+
+export function useUpdateJourneyEntry() {
+  const supabase = useSupabase();
+  const qc = useQueryClient();
+  const { user } = useUser();
+  return useMutation({
+    mutationFn: async (input: UpdateJourneyEntryInput) => {
+      if (!user) throw new Error("Not signed in");
+      devLog("update journey entry", input);
+      const patch: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (input.note !== undefined) patch.note = input.note;
+      if (input.progressType !== undefined) patch.progress_type = input.progressType;
+      if (input.progressValue !== undefined) patch.progress_value = input.progressValue;
+      const { error } = await supabase
+        .from(TABLES.journey)
+        .update(patch)
+        .eq("id", input.entryId)
+        .eq("user_id", user.id);
+      if (error) {
+        if (DEV) console.error("[bookkase] update journey entry failed", error);
+        throw error;
+      }
+      return { id: input.entryId };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookkase", "journey"] });
+    },
+  });
+}
+
 export function useManualSync() {
   const supabase = useSupabase();
   const qc = useQueryClient();

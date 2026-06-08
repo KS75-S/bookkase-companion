@@ -43,6 +43,7 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
   const setReading = useSetCurrentlyReading();
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const all = data ?? [];

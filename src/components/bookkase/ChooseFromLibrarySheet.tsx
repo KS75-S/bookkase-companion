@@ -184,6 +184,11 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
           </div>
         </div>
       </SheetContent>
+      <AddManualBookSheet
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onAdded={() => onOpenChange(false)}
+      />
     </Sheet>
   );
 }

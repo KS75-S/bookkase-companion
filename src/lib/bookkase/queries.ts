@@ -54,6 +54,75 @@ export function useActiveBooks() {
   });
 }
 
+export function useLibraryBooks() {
+  const supabase = useSupabase();
+  const { user, isSignedIn } = useUser();
+  return useQuery<UserBook[]>({
+    enabled: !!isSignedIn && !!user,
+    queryKey: ["bookkase", "library-books", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from(TABLES.userBooks)
+        .select(`*, book:${TABLES.books}(*)`)
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+      if (error) {
+        if (DEV) console.error("[bookkase] library load failed", error);
+        throw error;
+      }
+      const rows = (data ?? []) as unknown as UserBook[];
+      const normalized = rows.map((r) => {
+        const n = normalizeStatus(r.status as unknown as string);
+        return n ? ({ ...r, status: n } as UserBook) : r;
+      });
+      devLog("library loaded", { count: normalized.length });
+      return normalized;
+    },
+  });
+}
+
+export interface SetCurrentlyReadingInput {
+  ub: UserBook;
+}
+
+/**
+ * Mark an existing user_book as currently reading (or listening, if audio).
+ * Preserves existing progress_type/progress_value when present.
+ */
+export function useSetCurrentlyReading() {
+  const supabase = useSupabase();
+  const qc = useQueryClient();
+  const { user } = useUser();
+  return useMutation({
+    mutationFn: async ({ ub }: SetCurrentlyReadingInput) => {
+      if (!user) throw new Error("Not signed in");
+      const isAudio =
+        ub.progress_type === "timestamp" ||
+        !!ub.book?.total_duration_seconds;
+      const nextStatus: BookStatus = isAudio ? "listening" : "reading";
+      devLog("set currently reading", { bookId: ub.book_id, nextStatus });
+      const { error } = await supabase
+        .from(TABLES.userBooks)
+        .update({
+          status: nextStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ub.id)
+        .eq("user_id", user.id);
+      if (error) {
+        if (DEV) console.error("[bookkase] set currently reading failed", error);
+        throw error;
+      }
+      return { id: ub.id, status: nextStatus };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookkase", "active-books"] });
+      qc.invalidateQueries({ queryKey: ["bookkase", "library-books"] });
+    },
+  });
+}
+
 export function useJourney(limit = 50) {
   const supabase = useSupabase();
   const { user, isSignedIn } = useUser();

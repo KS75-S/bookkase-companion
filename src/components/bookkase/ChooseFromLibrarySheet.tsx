@@ -96,6 +96,15 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
             />
           </div>
 
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="bk-pill-ghost mt-3 inline-flex items-center justify-center gap-1.5 self-start text-sm"
+          >
+            <Plus size={14} />
+            Add a book manually
+          </button>
+
           <div className="mt-4 flex-1 overflow-y-auto -mx-1 px-1">
             {isLoading ? (
               <div className="space-y-2">

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { BookOpen, Search } from "lucide-react";
+import { BookOpen, Plus, Search } from "lucide-react";
+
+import { AddManualBookSheet } from "./AddManualBookSheet";
 
 import {
   Sheet,

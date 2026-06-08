@@ -123,6 +123,111 @@ export function useSetCurrentlyReading() {
   });
 }
 
+export interface AddManualBookInput {
+  title: string;
+  author: string;
+  totalPages?: number | null;
+  totalDurationSeconds?: number | null;
+  isbn?: string | null;
+  asin?: string | null;
+  goodreadsId?: string | null;
+  setCurrentlyReading?: boolean;
+}
+
+/**
+ * Manually add a book to the user's library. Inserts a `books` row and
+ * a corresponding `user_books` row. If the optional identifier columns
+ * (isbn / asin / goodreads_id) don't exist on the books table, retries
+ * the insert without them.
+ */
+export function useAddManualBook() {
+  const supabase = useSupabase();
+  const qc = useQueryClient();
+  const { user } = useUser();
+  return useMutation({
+    mutationFn: async (input: AddManualBookInput) => {
+      if (!user) throw new Error("Not signed in");
+      const title = input.title.trim();
+      const author = input.author.trim();
+      if (!title) throw new Error("Title is required");
+      if (!author) throw new Error("Author is required");
+
+      const isAudio = !!input.totalDurationSeconds && !input.totalPages;
+      const baseBook: Record<string, unknown> = {
+        title,
+        author,
+        total_pages: input.totalPages ?? null,
+        total_duration_seconds: input.totalDurationSeconds ?? null,
+      };
+      const idFields: Record<string, unknown> = {};
+      if (input.isbn) idFields.isbn = input.isbn.trim();
+      if (input.asin) idFields.asin = input.asin.trim();
+      if (input.goodreadsId) idFields.goodreads_id = input.goodreadsId.trim();
+
+      devLog("manual add book", { title, author, ...idFields });
+
+      let bookRow: { id: string } | null = null;
+      let lastErr: unknown = null;
+
+      // Try insert with identifier columns first, then progressively drop
+      // any column that the schema doesn't have.
+      const attempts: Array<Record<string, unknown>> = [
+        { ...baseBook, ...idFields },
+        baseBook,
+      ];
+      for (const payload of attempts) {
+        const { data, error } = await supabase
+          .from(TABLES.books)
+          .insert(payload)
+          .select("id")
+          .single();
+        if (!error && data) {
+          bookRow = data as { id: string };
+          break;
+        }
+        lastErr = error;
+        const msg = (error?.message ?? "").toLowerCase();
+        // Retry only when error is about a missing column
+        if (!/column .* does not exist|could not find .* column|schema cache/.test(msg)) {
+          break;
+        }
+      }
+      if (!bookRow) {
+        if (DEV) console.error("[bookkase] manual add book insert failed", lastErr);
+        throw lastErr instanceof Error ? lastErr : new Error("Failed to add book");
+      }
+
+      const status: BookStatus = input.setCurrentlyReading
+        ? isAudio
+          ? "listening"
+          : "reading"
+        : "reading";
+
+      const ubPayload: Record<string, unknown> = {
+        user_id: user.id,
+        book_id: bookRow.id,
+        status: input.setCurrentlyReading ? status : "reading",
+        updated_at: new Date().toISOString(),
+      };
+      // If user didn't ask to set as currently reading, we still need a status
+      // value. Default to "reading" so it appears as active — matches the
+      // companion-app flow where you only add a book you're about to read.
+      const { error: ubError } = await supabase
+        .from(TABLES.userBooks)
+        .insert(ubPayload);
+      if (ubError) {
+        if (DEV) console.error("[bookkase] manual add user_book failed", ubError);
+        throw ubError;
+      }
+      return { bookId: bookRow.id };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookkase", "active-books"] });
+      qc.invalidateQueries({ queryKey: ["bookkase", "library-books"] });
+    },
+  });
+}
+
 export function useJourney(limit = 50) {
   const supabase = useSupabase();
   const { user, isSignedIn } = useUser();

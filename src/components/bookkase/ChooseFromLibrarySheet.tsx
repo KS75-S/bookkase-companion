@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { BookOpen, Search } from "lucide-react";
+import { BookOpen, Plus, Search } from "lucide-react";
+
+import { AddManualBookSheet } from "./AddManualBookSheet";
 
 import {
   Sheet,
@@ -41,6 +43,7 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
   const setReading = useSetCurrentlyReading();
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const all = data ?? [];
@@ -92,6 +95,15 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
               className="pl-9"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="bk-pill-ghost mt-3 inline-flex items-center justify-center gap-1.5 self-start text-sm"
+          >
+            <Plus size={14} />
+            Add a book manually
+          </button>
 
           <div className="mt-4 flex-1 overflow-y-auto -mx-1 px-1">
             {isLoading ? (
@@ -172,6 +184,11 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
           </div>
         </div>
       </SheetContent>
+      <AddManualBookSheet
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onAdded={() => onOpenChange(false)}
+      />
     </Sheet>
   );
 }

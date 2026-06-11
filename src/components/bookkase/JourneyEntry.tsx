@@ -253,12 +253,31 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
   const progress = formatProgress(entry);
 
   if (entry.entry_type === "moment") {
+    const parsed = parseNoteTags(entry.note);
+    const tagObjs = parsed.tags.map((n) => tagByName(n)).filter(Boolean);
     return (
       <article className="bk-card p-5">
         <div className="flex items-start gap-2">
-          <p className="bk-display flex-1 whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
-            “{entry.note}”
-          </p>
+          <div className="flex-1">
+            {parsed.text ? (
+              <p className="bk-display whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
+                “{parsed.text}”
+              </p>
+            ) : null}
+            {tagObjs.length > 0 ? (
+              <div className={`flex flex-wrap gap-1.5 ${parsed.text ? "mt-3" : ""}`}>
+                {tagObjs.map((t) => (
+                  <span
+                    key={t!.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2.5 py-1 text-[11px] text-foreground/80"
+                  >
+                    <img src={t!.icon} alt="" className="h-4 w-4 object-contain" />
+                    {t!.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <EntryActions entry={entry} />
         </div>
         <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">

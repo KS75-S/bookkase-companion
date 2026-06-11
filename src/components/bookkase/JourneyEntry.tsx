@@ -4,6 +4,12 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { JourneyEntry } from "@/lib/bookkase/types";
 import { useDeleteJourneyEntry, useUpdateJourneyEntry } from "@/lib/bookkase/queries";
 import {
+  encodeNoteWithTags,
+  parseNoteTags,
+  tagByName,
+  PORTRAIT_TAGS,
+} from "@/lib/bookkase/portrait-tags";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

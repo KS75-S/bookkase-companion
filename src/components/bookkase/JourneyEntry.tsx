@@ -60,6 +60,7 @@ function EditEntryDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const update = useUpdateJourneyEntry();
   const initial = parseNoteTags(entry.note);
   const [note, setNote] = useState(initial.text);
   const [selectedTags, setSelectedTags] = useState<string[]>(initial.tags);

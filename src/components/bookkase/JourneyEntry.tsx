@@ -60,13 +60,16 @@ function EditEntryDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const update = useUpdateJourneyEntry();
-  const [note, setNote] = useState(entry.note ?? "");
+  const initial = parseNoteTags(entry.note);
+  const [note, setNote] = useState(initial.text);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initial.tags);
   const [progressValue, setProgressValue] = useState(entry.progress_value ?? "");
 
   useEffect(() => {
     if (open) {
-      setNote(entry.note ?? "");
+      const parsed = parseNoteTags(entry.note);
+      setNote(parsed.text);
+      setSelectedTags(parsed.tags);
       setProgressValue(entry.progress_value ?? "");
     }
   }, [open, entry]);
@@ -74,11 +77,17 @@ function EditEntryDialog({
   const hasNote = entry.entry_type === "moment";
   const hasProgress = !!entry.progress_type;
 
+  const toggleTag = (name: string) =>
+    setSelectedTags((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+    );
+
   const submit = () => {
+    const encoded = hasNote ? encodeNoteWithTags(note, selectedTags) : null;
     update.mutate(
       {
         entryId: entry.id,
-        ...(hasNote ? { note: note.trim() || null } : {}),
+        ...(hasNote ? { note: encoded || null } : {}),
         ...(hasProgress ? { progressValue: progressValue.trim() || null } : {}),
       },
       { onSuccess: () => onOpenChange(false) },

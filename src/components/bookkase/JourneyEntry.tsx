@@ -127,6 +127,33 @@ function EditEntryDialog({
                 className="bk-display min-h-[140px] resize-none rounded-xl"
                 placeholder="What are you thinking?"
               />
+              />
+              <div className="pt-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Reading Portrait Tags
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {PORTRAIT_TAGS.map((t) => {
+                    const active = selectedTags.includes(t.name);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleTag(t.name)}
+                        aria-pressed={active}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                          active
+                            ? "border-foreground/60 bg-foreground/5 text-foreground"
+                            : "border-border/70 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <img src={t.icon} alt="" className="h-5 w-5 object-contain" />
+                        <span>{t.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           ) : null}
           {hasProgress ? (

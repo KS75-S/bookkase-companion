@@ -1,6 +1,9 @@
 import feminineRage from "@/assets/portrait-tags/feminine-rage.png.asset.json";
 import obsession from "@/assets/portrait-tags/obsession.png.asset.json";
 import emotionalResonance from "@/assets/portrait-tags/emotional-resonance.png.asset.json";
+import immersion from "@/assets/portrait-tags/immersion.png.asset.json";
+import equality from "@/assets/portrait-tags/equality.png.asset.json";
+import diverse from "@/assets/portrait-tags/diverse.png.asset.json";
 
 export interface PortraitTag {
   id: string;
@@ -12,6 +15,9 @@ export const PORTRAIT_TAGS: PortraitTag[] = [
   { id: "feminine-rage", name: "Feminine Rage", icon: feminineRage.url },
   { id: "obsession", name: "Obsession", icon: obsession.url },
   { id: "emotional-resonance", name: "Emotional Resonance", icon: emotionalResonance.url },
+  { id: "immersion", name: "Immersion", icon: immersion.url },
+  { id: "equality", name: "Equality", icon: equality.url },
+  { id: "diverse", name: "Diverse", icon: diverse.url },
 ];
 
 const TAG_PREFIX = "[tags:";

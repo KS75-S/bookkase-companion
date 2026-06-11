@@ -127,7 +127,6 @@ function EditEntryDialog({
                 className="bk-display min-h-[140px] resize-none rounded-xl"
                 placeholder="What are you thinking?"
               />
-              />
               <div className="pt-1">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   Reading Portrait Tags

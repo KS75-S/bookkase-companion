@@ -4,6 +4,12 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { JourneyEntry } from "@/lib/bookkase/types";
 import { useDeleteJourneyEntry, useUpdateJourneyEntry } from "@/lib/bookkase/queries";
 import {
+  encodeNoteWithTags,
+  parseNoteTags,
+  tagByName,
+  PORTRAIT_TAGS,
+} from "@/lib/bookkase/portrait-tags";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -55,12 +61,16 @@ function EditEntryDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const update = useUpdateJourneyEntry();
-  const [note, setNote] = useState(entry.note ?? "");
+  const initial = parseNoteTags(entry.note);
+  const [note, setNote] = useState(initial.text);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initial.tags);
   const [progressValue, setProgressValue] = useState(entry.progress_value ?? "");
 
   useEffect(() => {
     if (open) {
-      setNote(entry.note ?? "");
+      const parsed = parseNoteTags(entry.note);
+      setNote(parsed.text);
+      setSelectedTags(parsed.tags);
       setProgressValue(entry.progress_value ?? "");
     }
   }, [open, entry]);
@@ -68,11 +78,17 @@ function EditEntryDialog({
   const hasNote = entry.entry_type === "moment";
   const hasProgress = !!entry.progress_type;
 
+  const toggleTag = (name: string) =>
+    setSelectedTags((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+    );
+
   const submit = () => {
+    const encoded = hasNote ? encodeNoteWithTags(note, selectedTags) : null;
     update.mutate(
       {
         entryId: entry.id,
-        ...(hasNote ? { note: note.trim() || null } : {}),
+        ...(hasNote ? { note: encoded || null } : {}),
         ...(hasProgress ? { progressValue: progressValue.trim() || null } : {}),
       },
       { onSuccess: () => onOpenChange(false) },
@@ -111,6 +127,32 @@ function EditEntryDialog({
                 className="bk-display min-h-[140px] resize-none rounded-xl"
                 placeholder="What are you thinking?"
               />
+              <div className="pt-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Reading Portrait Tags
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {PORTRAIT_TAGS.map((t) => {
+                    const active = selectedTags.includes(t.name);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleTag(t.name)}
+                        aria-pressed={active}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                          active
+                            ? "border-foreground/60 bg-foreground/5 text-foreground"
+                            : "border-border/70 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <img src={t.icon} alt="" className="h-5 w-5 object-contain" />
+                        <span>{t.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           ) : null}
           {hasProgress ? (
@@ -211,12 +253,31 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
   const progress = formatProgress(entry);
 
   if (entry.entry_type === "moment") {
+    const parsed = parseNoteTags(entry.note);
+    const tagObjs = parsed.tags.map((n) => tagByName(n)).filter(Boolean);
     return (
       <article className="bk-card p-5">
         <div className="flex items-start gap-2">
-          <p className="bk-display flex-1 whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
-            “{entry.note}”
-          </p>
+          <div className="flex-1">
+            {parsed.text ? (
+              <p className="bk-display whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
+                “{parsed.text}”
+              </p>
+            ) : null}
+            {tagObjs.length > 0 ? (
+              <div className={`flex flex-wrap gap-1.5 ${parsed.text ? "mt-3" : ""}`}>
+                {tagObjs.map((t) => (
+                  <span
+                    key={t!.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2.5 py-1 text-[11px] text-foreground/80"
+                  >
+                    <img src={t!.icon} alt="" className="h-4 w-4 object-contain" />
+                    {t!.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <EntryActions entry={entry} />
         </div>
         <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">

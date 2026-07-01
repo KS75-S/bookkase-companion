@@ -59,17 +59,22 @@ function resolveEntryTags(entry: JourneyEntry): {
   tagIds: string[];
 } {
   if (entry.tags && entry.tags.length > 0) {
-    const ids = entry.tags
-      .map((v) => resolveTag(v)?.id)
-      .filter((id): id is string => !!id);
+    const ids: string[] = [];
+    for (const v of entry.tags) {
+      const t = resolveTag(v);
+      if (t) ids.push(t.id);
+    }
     return { text: entry.note ?? "", tagIds: ids };
   }
   const parsed = parseNoteTags(entry.note);
-  const ids = parsed.tags
-    .map((n) => resolveTag(n)?.id)
-    .filter((id): id is string => !!id);
+  const ids: string[] = [];
+  for (const n of parsed.tags) {
+    const t = resolveTag(n);
+    if (t) ids.push(t.id);
+  }
   return { text: parsed.text, tagIds: ids };
 }
+
 
 const iconButtonClass =
   "inline-flex h-7 w-7 flex-none items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50";

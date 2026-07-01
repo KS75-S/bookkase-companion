@@ -273,7 +273,7 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
                     key={t!.id}
                     className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2.5 py-1 text-[11px] text-foreground/80"
                   >
-                    <img src={t!.icon} alt="" className="h-4 w-4 object-contain" />
+                    <ExpansionArtifactIcon id={t!.id} className="h-4 w-4" aria-hidden="true" />
                     {t!.name}
                   </span>
                 ))}

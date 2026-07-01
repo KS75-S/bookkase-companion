@@ -30,7 +30,9 @@ export interface JourneyEntry {
   progress_type: ProgressType | null;
   progress_value: string | null;
   note: string | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   book?: Book | null;
 }
+

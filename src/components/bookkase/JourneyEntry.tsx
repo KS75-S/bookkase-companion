@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
 import type { JourneyEntry } from "@/lib/bookkase/types";
 import { useDeleteJourneyEntry, useUpdateJourneyEntry } from "@/lib/bookkase/queries";
 import {
-  encodeNoteWithTags,
   parseNoteTags,
-  tagByName,
+  resolveTag,
   PORTRAIT_TAGS,
 } from "@/lib/bookkase/portrait-tags";
 import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
@@ -49,6 +48,34 @@ function formatDate(iso: string): string {
   }
 }
 
+/**
+ * Resolve the tags for an entry:
+ *  - Prefer the new `tags` column (array of IDs).
+ *  - Fall back to legacy `[tags:Name, Name]` prefix inside `note`.
+ * Returns display text and resolved tag objects.
+ */
+function resolveEntryTags(entry: JourneyEntry): {
+  text: string;
+  tagIds: string[];
+} {
+  if (entry.tags && entry.tags.length > 0) {
+    const ids: string[] = [];
+    for (const v of entry.tags) {
+      const t = resolveTag(v);
+      if (t) ids.push(t.id);
+    }
+    return { text: entry.note ?? "", tagIds: ids };
+  }
+  const parsed = parseNoteTags(entry.note);
+  const ids: string[] = [];
+  for (const n of parsed.tags) {
+    const t = resolveTag(n);
+    if (t) ids.push(t.id);
+  }
+  return { text: parsed.text, tagIds: ids };
+}
+
+
 const iconButtonClass =
   "inline-flex h-7 w-7 flex-none items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50";
 
@@ -62,16 +89,16 @@ function EditEntryDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const update = useUpdateJourneyEntry();
-  const initial = parseNoteTags(entry.note);
+  const initial = useMemo(() => resolveEntryTags(entry), [entry]);
   const [note, setNote] = useState(initial.text);
-  const [selectedTags, setSelectedTags] = useState<string[]>(initial.tags);
+  const [selectedIds, setSelectedIds] = useState<string[]>(initial.tagIds);
   const [progressValue, setProgressValue] = useState(entry.progress_value ?? "");
 
   useEffect(() => {
     if (open) {
-      const parsed = parseNoteTags(entry.note);
+      const parsed = resolveEntryTags(entry);
       setNote(parsed.text);
-      setSelectedTags(parsed.tags);
+      setSelectedIds(parsed.tagIds);
       setProgressValue(entry.progress_value ?? "");
     }
   }, [open, entry]);
@@ -79,17 +106,16 @@ function EditEntryDialog({
   const hasNote = entry.entry_type === "moment";
   const hasProgress = !!entry.progress_type;
 
-  const toggleTag = (name: string) =>
-    setSelectedTags((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+  const toggleTag = (id: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id],
     );
 
   const submit = () => {
-    const encoded = hasNote ? encodeNoteWithTags(note, selectedTags) : null;
     update.mutate(
       {
         entryId: entry.id,
-        ...(hasNote ? { note: encoded || null } : {}),
+        ...(hasNote ? { note: note.trim() || null, tags: selectedIds } : {}),
         ...(hasProgress ? { progressValue: progressValue.trim() || null } : {}),
       },
       { onSuccess: () => onOpenChange(false) },
@@ -134,12 +160,12 @@ function EditEntryDialog({
                 </p>
                 <div className="grid grid-cols-5 gap-2">
                   {PORTRAIT_TAGS.map((t) => {
-                    const active = selectedTags.includes(t.name);
+                    const active = selectedIds.includes(t.id);
                     return (
                       <button
                         key={t.id}
                         type="button"
-                        onClick={() => toggleTag(t.name)}
+                        onClick={() => toggleTag(t.id)}
                         aria-pressed={active}
                         title={t.subtitle}
                         className={`flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition ${
@@ -182,7 +208,7 @@ function EditEntryDialog({
             type="button"
             className="bk-pill"
             onClick={submit}
-            disabled={update.isPending || (hasNote && !note.trim())}
+            disabled={update.isPending || (hasNote && !note.trim() && selectedIds.length === 0)}
           >
             {update.isPending ? "Saving…" : "Save"}
           </button>
@@ -255,19 +281,19 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
   const progress = formatProgress(entry);
 
   if (entry.entry_type === "moment") {
-    const parsed = parseNoteTags(entry.note);
-    const tagObjs = parsed.tags.map((n) => tagByName(n)).filter(Boolean);
+    const { text, tagIds } = resolveEntryTags(entry);
+    const tagObjs = tagIds.map((id) => resolveTag(id)).filter(Boolean);
     return (
       <article className="bk-card p-5">
         <div className="flex items-start gap-2">
           <div className="flex-1">
-            {parsed.text ? (
+            {text ? (
               <p className="bk-display whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
-                “{parsed.text}”
+                “{text}”
               </p>
             ) : null}
             {tagObjs.length > 0 ? (
-              <div className={`flex flex-wrap gap-1.5 ${parsed.text ? "mt-3" : ""}`}>
+              <div className={`flex flex-wrap gap-1.5 ${text ? "mt-3" : ""}`}>
                 {tagObjs.map((t) => (
                   <span
                     key={t!.id}

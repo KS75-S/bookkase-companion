@@ -26,9 +26,11 @@ export type QueuedWrite =
       progressType: ProgressType | null;
       progressValue: string | null;
       note: string;
+      tags: string[];
       createdAt: string;
       attempts: number;
     };
+
 
 const DEV = import.meta.env.DEV;
 
@@ -192,6 +194,7 @@ async function runOne(supabase: SupabaseClient, item: QueuedWrite) {
         progress_type: item.progressType,
         progress_value: item.progressValue,
         note: item.note,
+        tags: item.tags && item.tags.length > 0 ? item.tags : null,
         created_at: item.createdAt,
         updated_at: new Date().toISOString(),
       },

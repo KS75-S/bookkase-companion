@@ -9,6 +9,7 @@ import {
   tagByName,
   PORTRAIT_TAGS,
 } from "@/lib/bookkase/portrait-tags";
+import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
 import {
   AlertDialog,
   AlertDialogAction,

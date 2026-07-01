@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import type { UserBook } from "@/lib/bookkase/types";
 import { useAddMoment } from "@/lib/bookkase/queries";
-import { PORTRAIT_TAGS, encodeNoteWithTags } from "@/lib/bookkase/portrait-tags";
+import { PORTRAIT_TAGS } from "@/lib/bookkase/portrait-tags";
 import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
 
 interface Props {
@@ -23,25 +23,26 @@ interface Props {
 export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
   const mutation = useAddMoment();
   const [note, setNote] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
       setNote("");
-      setSelected([]);
+      setSelectedIds([]);
     }
   }, [open]);
 
-  const toggle = (name: string) =>
-    setSelected((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+  const toggle = (id: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id],
     );
 
   const submit = async () => {
-    if (!note.trim() && selected.length === 0) return;
+    if (!note.trim() && selectedIds.length === 0) return;
     await mutation.mutateAsync({
       bookId: ub.book_id,
-      note: encodeNoteWithTags(note, selected),
+      note: note.trim(),
+      tags: selectedIds,
       progressType: (ub.progress_type as never) ?? null,
       progressValue: ub.progress_value ?? null,
     });
@@ -78,12 +79,12 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
               </p>
               <div className="grid grid-cols-5 gap-2">
                 {PORTRAIT_TAGS.map((t) => {
-                  const active = selected.includes(t.name);
+                  const active = selectedIds.includes(t.id);
                   return (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => toggle(t.name)}
+                      onClick={() => toggle(t.id)}
                       aria-pressed={active}
                       title={t.subtitle}
                       className={`flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition ${
@@ -108,7 +109,7 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
             <button
               className="bk-pill w-full text-base"
               onClick={submit}
-              disabled={mutation.isPending || (!note.trim() && selected.length === 0)}
+              disabled={mutation.isPending || (!note.trim() && selectedIds.length === 0)}
             >
               {mutation.isPending ? "Saving…" : "Save Moment"}
             </button>

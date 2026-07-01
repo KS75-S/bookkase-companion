@@ -295,6 +295,7 @@ export function useUpdateProgress() {
 export interface AddMomentInput {
   bookId: string;
   note: string;
+  tags?: string[];
   progressType?: ProgressType | null;
   progressValue?: string | null;
 }
@@ -317,6 +318,7 @@ export function useAddMoment() {
         progressType: input.progressType ?? null,
         progressValue: input.progressValue ?? null,
         note: input.note,
+        tags: input.tags ?? [],
         createdAt,
         attempts: 0,
       });
@@ -328,6 +330,7 @@ export function useAddMoment() {
     },
   });
 }
+
 
 export function useDeleteJourneyEntry() {
   const supabase = useSupabase();
@@ -357,6 +360,7 @@ export function useDeleteJourneyEntry() {
 export interface UpdateJourneyEntryInput {
   entryId: string;
   note?: string | null;
+  tags?: string[] | null;
   progressType?: ProgressType | null;
   progressValue?: string | null;
 }
@@ -373,6 +377,9 @@ export function useUpdateJourneyEntry() {
         updated_at: new Date().toISOString(),
       };
       if (input.note !== undefined) patch.note = input.note;
+      if (input.tags !== undefined) {
+        patch.tags = input.tags && input.tags.length > 0 ? input.tags : null;
+      }
       if (input.progressType !== undefined) patch.progress_type = input.progressType;
       if (input.progressValue !== undefined) patch.progress_value = input.progressValue;
       const { error } = await supabase
@@ -391,6 +398,7 @@ export function useUpdateJourneyEntry() {
     },
   });
 }
+
 
 export function useManualSync() {
   const supabase = useSupabase();

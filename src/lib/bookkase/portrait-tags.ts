@@ -1,24 +1,20 @@
-import feminineRage from "@/assets/portrait-tags/feminine-rage.png.asset.json";
-import obsession from "@/assets/portrait-tags/obsession.png.asset.json";
-import emotionalResonance from "@/assets/portrait-tags/emotional-resonance.png.asset.json";
-import immersion from "@/assets/portrait-tags/immersion.png.asset.json";
-import equality from "@/assets/portrait-tags/equality.png.asset.json";
-import diverse from "@/assets/portrait-tags/diverse.png.asset.json";
+import {
+  EMOTIONAL_LANGUAGE_IDS,
+  EMOTIONAL_LANGUAGE_METADATA,
+  type EmotionalLanguageId,
+} from "./expansion-artifacts";
 
 export interface PortraitTag {
-  id: string;
+  id: EmotionalLanguageId;
   name: string;
-  icon: string;
+  subtitle: string;
 }
 
-export const PORTRAIT_TAGS: PortraitTag[] = [
-  { id: "feminine-rage", name: "Feminine Rage", icon: feminineRage.url },
-  { id: "obsession", name: "Obsession", icon: obsession.url },
-  { id: "emotional-resonance", name: "Emotional Resonance", icon: emotionalResonance.url },
-  { id: "immersion", name: "Immersion", icon: immersion.url },
-  { id: "equality", name: "Equality", icon: equality.url },
-  { id: "diverse", name: "Diverse", icon: diverse.url },
-];
+export const PORTRAIT_TAGS: PortraitTag[] = EMOTIONAL_LANGUAGE_IDS.map((id) => ({
+  id,
+  name: EMOTIONAL_LANGUAGE_METADATA[id].name,
+  subtitle: EMOTIONAL_LANGUAGE_METADATA[id].subtitle,
+}));
 
 const TAG_PREFIX = "[tags:";
 const TAG_SUFFIX = "]";
@@ -30,7 +26,7 @@ export function encodeNoteWithTags(note: string, tagNames: string[]): string {
   return `${TAG_PREFIX}${tagNames.join(", ")}${TAG_SUFFIX} ${trimmed}`.trim();
 }
 
-/** Parse tags out of a stored note. Returns { tags, text } where text is the note without the marker. */
+/** Parse tags out of a stored note. Returns { tags, text } — text is the note without the marker. */
 export function parseNoteTags(note: string | null | undefined): { tags: string[]; text: string } {
   if (!note) return { tags: [], text: "" };
   const match = note.match(/^\[tags:([^\]]+)\]\s*/);
@@ -42,6 +38,15 @@ export function parseNoteTags(note: string | null | undefined): { tags: string[]
   return { tags, text: note.slice(match[0].length) };
 }
 
+// Legacy tag names (from earlier versions) mapped to current canonical names.
+const LEGACY_NAME_TO_CURRENT: Record<string, string> = {
+  "emotional resonance": "Resonance",
+  equality: "Belonging",
+  diverse: "Diversity",
+};
+
 export function tagByName(name: string): PortraitTag | undefined {
-  return PORTRAIT_TAGS.find((t) => t.name.toLowerCase() === name.toLowerCase());
+  const lower = name.toLowerCase();
+  const mapped = LEGACY_NAME_TO_CURRENT[lower]?.toLowerCase() ?? lower;
+  return PORTRAIT_TAGS.find((t) => t.name.toLowerCase() === mapped);
 }

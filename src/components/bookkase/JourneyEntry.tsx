@@ -132,7 +132,7 @@ function EditEntryDialog({
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   Reading Portrait Tags
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-5 gap-2">
                   {PORTRAIT_TAGS.map((t) => {
                     const active = selectedTags.includes(t.name);
                     return (
@@ -141,14 +141,15 @@ function EditEntryDialog({
                         type="button"
                         onClick={() => toggleTag(t.name)}
                         aria-pressed={active}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                        title={t.subtitle}
+                        className={`flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition ${
                           active
                             ? "border-foreground/60 bg-foreground/5 text-foreground"
-                            : "border-border/70 text-muted-foreground hover:text-foreground"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <img src={t.icon} alt="" className="h-5 w-5 object-contain" />
-                        <span>{t.name}</span>
+                        <ExpansionArtifactIcon id={t.id} className="h-8 w-8" aria-hidden="true" />
+                        <span className="text-[10px] leading-tight">{t.name}</span>
                       </button>
                     );
                   })}

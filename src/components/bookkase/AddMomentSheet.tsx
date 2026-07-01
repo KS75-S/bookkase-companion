@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { UserBook } from "@/lib/bookkase/types";
 import { useAddMoment } from "@/lib/bookkase/queries";
 import { PORTRAIT_TAGS, encodeNoteWithTags } from "@/lib/bookkase/portrait-tags";
+import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
 
 interface Props {
   open: boolean;

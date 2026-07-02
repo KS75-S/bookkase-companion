@@ -4,11 +4,13 @@ import { useUser } from "@clerk/clerk-react";
 import { useSupabase } from "./supabase-provider";
 import {
   ACTIVE_STATUS_VALUES,
+  BOOK_COLUMNS,
   TABLES,
   normalizeStatus,
   type BookStatus,
   type ProgressType,
 } from "./schema";
+
 import type { JourneyEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";
 

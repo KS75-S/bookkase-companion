@@ -4,7 +4,7 @@ export interface Book {
   id: string;
   title: string;
   author: string | null;
-  cover_url: string | null;
+  cover: string | null;
   total_pages: number | null;
   total_chapters: number | null;
   total_duration_seconds: number | null;

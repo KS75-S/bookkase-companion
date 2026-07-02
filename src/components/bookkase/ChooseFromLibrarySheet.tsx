@@ -14,6 +14,9 @@ import { Input } from "@/components/ui/input";
 import { useLibraryBooks, useSetCurrentlyReading } from "@/lib/bookkase/queries";
 import type { UserBook } from "@/lib/bookkase/types";
 import { normalizeStatus } from "@/lib/bookkase/schema";
+import { useSupabase } from "@/lib/bookkase/supabase-provider";
+import { resolveCoverUrl } from "@/lib/bookkase/covers";
+
 
 interface Props {
   open: boolean;

@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BookOpen, Sparkles } from "lucide-react";
 
 import type { UserBook } from "@/lib/bookkase/types";
+import { useSupabase } from "@/lib/bookkase/supabase-provider";
+import { resolveCoverUrl } from "@/lib/bookkase/covers";
 import { OmbreProgress } from "./OmbreProgress";
 import { UpdateProgressSheet } from "./UpdateProgressSheet";
 import { AddMomentSheet } from "./AddMomentSheet";
+
 
 function parseTimestampSeconds(v: string): number | null {
   const parts = v.split(":").map((p) => parseInt(p, 10));
@@ -80,19 +83,21 @@ function missingMetadataHint(ub: UserBook): string | null {
 export function BookCard({ ub }: { ub: UserBook }) {
   const [updateOpen, setUpdateOpen] = useState(false);
   const [momentOpen, setMomentOpen] = useState(false);
+  const supabase = useSupabase();
 
   const book = ub.book;
   const fraction = progressFraction(ub);
+  const coverUrl = useMemo(() => resolveCoverUrl(supabase, book?.cover), [supabase, book?.cover]);
 
   return (
     <article className="bk-card overflow-hidden">
       <div className="flex gap-4 p-4">
         <div className="relative h-[110px] w-[74px] flex-none overflow-hidden rounded-md bg-[color:var(--surface-2)] shadow-[0_8px_20px_-10px_oklch(0_0_0/0.35)]">
-          {book?.cover_url ? (
+          {coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={book.cover_url}
-              alt=""
+              src={coverUrl}
+              alt={book?.title ? `Cover of ${book.title}` : "Book cover"}
               className="h-full w-full object-cover"
               loading="lazy"
             />
@@ -102,6 +107,7 @@ export function BookCard({ ub }: { ub: UserBook }) {
             </div>
           )}
         </div>
+
         <div className="min-w-0 flex-1">
           <h3 className="bk-display truncate text-[1.05rem] leading-snug text-foreground">
             {book?.title ?? "Untitled"}

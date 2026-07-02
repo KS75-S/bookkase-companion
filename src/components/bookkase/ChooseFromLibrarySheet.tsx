@@ -14,6 +14,9 @@ import { Input } from "@/components/ui/input";
 import { useLibraryBooks, useSetCurrentlyReading } from "@/lib/bookkase/queries";
 import type { UserBook } from "@/lib/bookkase/types";
 import { normalizeStatus } from "@/lib/bookkase/schema";
+import { useSupabase } from "@/lib/bookkase/supabase-provider";
+import { resolveCoverUrl } from "@/lib/bookkase/covers";
+
 
 interface Props {
   open: boolean;
@@ -41,6 +44,8 @@ function statusLabel(ub: UserBook): string | null {
 export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
   const { data, isLoading, error, refetch } = useLibraryBooks();
   const setReading = useSetCurrentlyReading();
+  const supabase = useSupabase();
+
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -134,6 +139,7 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
                 {filtered.map((ub) => {
                   const label = statusLabel(ub);
                   const busy = pendingId === ub.id;
+                  const coverUrl = resolveCoverUrl(supabase, ub.book?.cover);
                   return (
                     <li key={ub.id}>
                       <button
@@ -143,11 +149,11 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
                         className="bk-card flex w-full items-center gap-3 p-3 text-left transition disabled:opacity-60"
                       >
                         <div className="relative h-[64px] w-[44px] flex-none overflow-hidden rounded-md bg-[color:var(--surface-2)]">
-                          {ub.book?.cover_url ? (
+                          {coverUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={ub.book.cover_url}
-                              alt=""
+                              src={coverUrl}
+                              alt={ub.book?.title ? `Cover of ${ub.book.title}` : "Book cover"}
                               className="h-full w-full object-cover"
                               loading="lazy"
                             />
@@ -157,6 +163,7 @@ export function ChooseFromLibrarySheet({ open, onOpenChange }: Props) {
                             </div>
                           )}
                         </div>
+
                         <div className="min-w-0 flex-1">
                           <p className="bk-display truncate text-[0.95rem] leading-snug text-foreground">
                             {ub.book?.title ?? "Untitled"}

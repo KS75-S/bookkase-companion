@@ -4,11 +4,13 @@ import { useUser } from "@clerk/clerk-react";
 import { useSupabase } from "./supabase-provider";
 import {
   ACTIVE_STATUS_VALUES,
+  BOOK_COLUMNS,
   TABLES,
   normalizeStatus,
   type BookStatus,
   type ProgressType,
 } from "./schema";
+
 import type { JourneyEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";
 
@@ -34,7 +36,7 @@ export function useActiveBooks() {
       if (!user) return [];
       const { data, error } = await supabase
         .from(TABLES.userBooks)
-        .select(`*, book:${TABLES.books}(*)`)
+        .select(`*, book:${TABLES.books}(${BOOK_COLUMNS})`)
         .eq("user_id", user.id)
         .in("status", ACTIVE_STATUS_VALUES)
         .order("updated_at", { ascending: false });
@@ -64,7 +66,7 @@ export function useLibraryBooks() {
       if (!user) return [];
       const { data, error } = await supabase
         .from(TABLES.userBooks)
-        .select(`*, book:${TABLES.books}(*)`)
+        .select(`*, book:${TABLES.books}(${BOOK_COLUMNS})`)
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
       if (error) {
@@ -238,7 +240,7 @@ export function useJourney(limit = 50) {
       if (!user) return [];
       const { data, error } = await supabase
         .from(TABLES.journey)
-        .select(`*, book:${TABLES.books}(*)`)
+        .select(`*, book:${TABLES.books}(${BOOK_COLUMNS})`)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(limit);

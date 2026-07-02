@@ -11,6 +11,14 @@ export const TABLES = {
   journey: "reading_journey",
 } as const;
 
+/** Explicit projection for the `books` table so we always fetch the real column names. */
+export const BOOK_COLUMNS =
+  "id,title,author,cover,total_pages,total_chapters,total_duration_seconds";
+
+/** Storage bucket that holds user-uploaded book cover images. */
+export const COVERS_BUCKET = "covers";
+
+
 export type BookStatus = "reading" | "listening" | "finished" | "dnf" | "rereading";
 export type ProgressType = "percentage" | "page" | "chapter" | "timestamp";
 export type JourneyEntryType = "moment" | "progress" | "status" | "finished";

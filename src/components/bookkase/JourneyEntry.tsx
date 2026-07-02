@@ -293,15 +293,15 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
               </p>
             ) : null}
             {tagObjs.length > 0 ? (
-              <div className={`flex flex-wrap gap-1.5 ${text ? "mt-3" : ""}`}>
+              <div className={`grid grid-cols-5 gap-2 ${text ? "mt-3" : ""}`}>
                 {tagObjs.map((t) => (
-                  <span
+                  <div
                     key={t!.id}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2.5 py-1 text-[11px] text-foreground/80"
+                    className="flex flex-col items-center gap-1 rounded-xl border border-transparent p-2 text-center text-foreground/80"
                   >
-                    <ExpansionArtifactIcon id={t!.id} className="h-4 w-4" aria-hidden="true" />
-                    {t!.name}
-                  </span>
+                    <ExpansionArtifactIcon id={t!.id} className="h-9 w-9" aria-hidden="true" />
+                    <span className="text-[10px] leading-tight">{t!.name}</span>
+                  </div>
                 ))}
               </div>
             ) : null}

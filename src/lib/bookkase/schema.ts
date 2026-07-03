@@ -11,9 +11,13 @@ export const TABLES = {
   journey: "reading_journey",
 } as const;
 
-/** Explicit projection for the `books` table so we always fetch the real column names. */
-export const BOOK_COLUMNS =
-  "id,title,author,cover,total_pages,total_chapters,total_duration_seconds";
+/**
+ * Explicit projection for the `books` table. The BookKase schema stores page
+ * count as `pages` (not `total_pages`), and does NOT have chapter-count or
+ * audio-duration columns — so we alias `pages` to `total_pages` and leave the
+ * chapter/duration fields undefined (consumers already handle them being null).
+ */
+export const BOOK_COLUMNS = "id,title,author,cover,total_pages:pages";
 
 /** Storage bucket that holds user-uploaded book cover images. */
 export const COVERS_BUCKET = "covers";

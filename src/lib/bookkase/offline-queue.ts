@@ -2,6 +2,7 @@ import { get, set } from "idb-keyval";
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 
 import { TABLES, COMPANION_SOURCE, type BookStatus, type ProgressType } from "./schema";
+import { SPOILER_TAG } from "./moment-types";
 
 const QUEUE_KEY = "bookkase:companion:pending-writes:v2";
 

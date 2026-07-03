@@ -58,14 +58,20 @@ function formatDate(iso: string): string {
 function resolveEntryTags(entry: JourneyEntry): {
   text: string;
   tagIds: string[];
+  spoiler: boolean;
 } {
   if (entry.tags && entry.tags.length > 0) {
     const ids: string[] = [];
+    let spoiler = false;
     for (const v of entry.tags) {
+      if (v === SPOILER_TAG) {
+        spoiler = true;
+        continue;
+      }
       const t = resolveTag(v);
       if (t) ids.push(t.id);
     }
-    return { text: entry.note ?? "", tagIds: ids };
+    return { text: entry.note ?? "", tagIds: ids, spoiler };
   }
   const parsed = parseNoteTags(entry.note);
   const ids: string[] = [];
@@ -73,7 +79,7 @@ function resolveEntryTags(entry: JourneyEntry): {
     const t = resolveTag(n);
     if (t) ids.push(t.id);
   }
-  return { text: parsed.text, tagIds: ids };
+  return { text: parsed.text, tagIds: ids, spoiler: false };
 }
 
 

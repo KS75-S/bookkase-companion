@@ -158,8 +158,7 @@ export function useAddManualBook() {
       const baseBook: Record<string, unknown> = {
         title,
         author,
-        total_pages: input.totalPages ?? null,
-        total_duration_seconds: input.totalDurationSeconds ?? null,
+        pages: input.totalPages ?? null,
       };
       const idFields: Record<string, unknown> = {};
       if (input.isbn) idFields.isbn = input.isbn.trim();

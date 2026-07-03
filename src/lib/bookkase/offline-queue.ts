@@ -27,6 +27,8 @@ export type QueuedWrite =
       progressValue: string | null;
       note: string;
       tags: string[];
+      momentType: string | null;
+      spoiler: boolean;
       createdAt: string;
       attempts: number;
     };

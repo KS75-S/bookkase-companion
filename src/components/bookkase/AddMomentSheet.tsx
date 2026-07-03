@@ -8,11 +8,21 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 import type { UserBook } from "@/lib/bookkase/types";
 import { useAddMoment } from "@/lib/bookkase/queries";
 import { PORTRAIT_TAGS } from "@/lib/bookkase/portrait-tags";
 import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
+import { MOMENT_TYPES, type MomentType } from "@/lib/bookkase/moment-types";
 
 interface Props {
   open: boolean;
@@ -24,11 +34,15 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
   const mutation = useAddMoment();
   const [note, setNote] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [momentType, setMomentType] = useState<MomentType | "">("");
+  const [spoiler, setSpoiler] = useState(false);
 
   useEffect(() => {
     if (open) {
       setNote("");
       setSelectedIds([]);
+      setMomentType("");
+      setSpoiler(false);
     }
   }, [open]);
 
@@ -45,6 +59,8 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
       tags: selectedIds,
       progressType: (ub.progress_type as never) ?? null,
       progressValue: ub.progress_value ?? null,
+      momentType: momentType || null,
+      spoiler,
     });
     onOpenChange(false);
   };
@@ -72,6 +88,41 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
               rows={6}
               className="bk-display min-h-[150px] resize-none rounded-xl border-border/70 bg-background text-[1.05rem] leading-relaxed"
             />
+
+            <div className="space-y-2">
+              <Label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Moment type <span className="normal-case tracking-normal text-muted-foreground/70">(optional)</span>
+              </Label>
+              <Select
+                value={momentType}
+                onValueChange={(v) => setMomentType(v as MomentType)}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Pick a type…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOMENT_TYPES.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border/70 bg-background px-3 py-2.5">
+              <Checkbox
+                checked={spoiler}
+                onCheckedChange={(v) => setSpoiler(v === true)}
+                id="spoiler"
+              />
+              <span className="flex-1">
+                <span className="block text-sm font-medium text-foreground">Spoiler</span>
+                <span className="block text-xs text-muted-foreground">
+                  Blur this moment in Journey until tapped to reveal.
+                </span>
+              </span>
+            </label>
 
             <div>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

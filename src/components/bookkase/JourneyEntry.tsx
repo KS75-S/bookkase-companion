@@ -288,45 +288,9 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
   const progress = formatProgress(entry);
 
   if (entry.entry_type === "moment") {
-    const { text, tagIds } = resolveEntryTags(entry);
-    const tagObjs = tagIds.map((id) => resolveTag(id)).filter(Boolean);
-    return (
-      <article className="bk-card p-5">
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
-            {text ? (
-              <p className="bk-display whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
-                “{text}”
-              </p>
-            ) : null}
-            {tagObjs.length > 0 ? (
-              <div className={`grid grid-cols-5 gap-2 ${text ? "mt-3" : ""}`}>
-                {tagObjs.map((t) => (
-                  <div
-                    key={t!.id}
-                    className="flex flex-col items-center gap-1 rounded-xl border border-transparent p-2 text-center text-foreground/80"
-                  >
-                    <ExpansionArtifactIcon id={t!.id} className="h-9 w-9" aria-hidden="true" />
-                    <span className="text-[10px] leading-tight">{t!.name}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <EntryActions entry={entry} />
-        </div>
-        <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          {entry.book?.title ? (
-            <span className="bk-accent text-[0.95rem] text-foreground/80">
-              {entry.book.title}
-            </span>
-          ) : null}
-          {progress ? <span>· {progress}</span> : null}
-          <span className="ml-auto">{formatDate(entry.created_at)}</span>
-        </div>
-      </article>
-    );
+    return <MomentCard entry={entry} progress={progress} />;
   }
+
 
   // progress / status / finished — quieter compact card
   const label =

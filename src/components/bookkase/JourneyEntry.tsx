@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 import type { JourneyEntry } from "@/lib/bookkase/types";
 import { useDeleteJourneyEntry, useUpdateJourneyEntry } from "@/lib/bookkase/queries";
@@ -9,6 +9,7 @@ import {
   PORTRAIT_TAGS,
 } from "@/lib/bookkase/portrait-tags";
 import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
+import { SPOILER_TAG, momentTypeLabel } from "@/lib/bookkase/moment-types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,14 +58,20 @@ function formatDate(iso: string): string {
 function resolveEntryTags(entry: JourneyEntry): {
   text: string;
   tagIds: string[];
+  spoiler: boolean;
 } {
   if (entry.tags && entry.tags.length > 0) {
     const ids: string[] = [];
+    let spoiler = false;
     for (const v of entry.tags) {
+      if (v === SPOILER_TAG) {
+        spoiler = true;
+        continue;
+      }
       const t = resolveTag(v);
       if (t) ids.push(t.id);
     }
-    return { text: entry.note ?? "", tagIds: ids };
+    return { text: entry.note ?? "", tagIds: ids, spoiler };
   }
   const parsed = parseNoteTags(entry.note);
   const ids: string[] = [];
@@ -72,7 +79,7 @@ function resolveEntryTags(entry: JourneyEntry): {
     const t = resolveTag(n);
     if (t) ids.push(t.id);
   }
-  return { text: parsed.text, tagIds: ids };
+  return { text: parsed.text, tagIds: ids, spoiler: false };
 }
 
 
@@ -277,49 +284,103 @@ function EntryActions({ entry }: { entry: JourneyEntry }) {
   );
 }
 
+function MomentCard({
+  entry,
+  progress,
+}: {
+  entry: JourneyEntry;
+  progress: string | null;
+}) {
+  const { text, tagIds, spoiler } = resolveEntryTags(entry);
+  const tagObjs = tagIds.map((id) => resolveTag(id)).filter(Boolean);
+  const typeLabel = momentTypeLabel(entry.moment_type);
+  const [revealed, setRevealed] = useState(false);
+  const hideBody = spoiler && !revealed;
+
+  return (
+    <article className="bk-card p-5">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          {typeLabel || spoiler ? (
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              {typeLabel ? (
+                <span className="inline-flex items-center rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
+                  {typeLabel}
+                </span>
+              ) : null}
+              {spoiler ? (
+                <span className="inline-flex items-center rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-destructive">
+                  Spoiler
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="relative">
+            <div
+              className={
+                hideBody
+                  ? "pointer-events-none select-none blur-md transition"
+                  : "transition"
+              }
+              aria-hidden={hideBody}
+            >
+              {text ? (
+                <p className="bk-display whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
+                  “{text}”
+                </p>
+              ) : null}
+              {tagObjs.length > 0 ? (
+                <div className={`grid grid-cols-5 gap-2 ${text ? "mt-3" : ""}`}>
+                  {tagObjs.map((t) => (
+                    <div
+                      key={t!.id}
+                      className="flex flex-col items-center gap-1 rounded-xl border border-transparent p-2 text-center text-foreground/80"
+                    >
+                      <ExpansionArtifactIcon id={t!.id} className="h-9 w-9" aria-hidden="true" />
+                      <span className="text-[10px] leading-tight">{t!.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            {hideBody ? (
+              <button
+                type="button"
+                onClick={() => setRevealed(true)}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium text-foreground/80 hover:text-foreground"
+                aria-label="Tap to reveal spoiler"
+              >
+                <Eye className="h-4 w-4" />
+                Tap to reveal
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <EntryActions entry={entry} />
+      </div>
+      <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        {entry.book?.title ? (
+          <span className="bk-accent text-[0.95rem] text-foreground/80">
+            {entry.book.title}
+          </span>
+        ) : null}
+        {progress ? <span>· {progress}</span> : null}
+        <span className="ml-auto">{formatDate(entry.created_at)}</span>
+      </div>
+    </article>
+  );
+}
+
+
 export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
   const progress = formatProgress(entry);
 
   if (entry.entry_type === "moment") {
-    const { text, tagIds } = resolveEntryTags(entry);
-    const tagObjs = tagIds.map((id) => resolveTag(id)).filter(Boolean);
-    return (
-      <article className="bk-card p-5">
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
-            {text ? (
-              <p className="bk-display whitespace-pre-wrap text-[1.05rem] leading-relaxed text-foreground">
-                “{text}”
-              </p>
-            ) : null}
-            {tagObjs.length > 0 ? (
-              <div className={`grid grid-cols-5 gap-2 ${text ? "mt-3" : ""}`}>
-                {tagObjs.map((t) => (
-                  <div
-                    key={t!.id}
-                    className="flex flex-col items-center gap-1 rounded-xl border border-transparent p-2 text-center text-foreground/80"
-                  >
-                    <ExpansionArtifactIcon id={t!.id} className="h-9 w-9" aria-hidden="true" />
-                    <span className="text-[10px] leading-tight">{t!.name}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <EntryActions entry={entry} />
-        </div>
-        <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          {entry.book?.title ? (
-            <span className="bk-accent text-[0.95rem] text-foreground/80">
-              {entry.book.title}
-            </span>
-          ) : null}
-          {progress ? <span>· {progress}</span> : null}
-          <span className="ml-auto">{formatDate(entry.created_at)}</span>
-        </div>
-      </article>
-    );
+    return <MomentCard entry={entry} progress={progress} />;
   }
+
 
   // progress / status / finished — quieter compact card
   const label =

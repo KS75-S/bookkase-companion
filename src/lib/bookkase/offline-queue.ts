@@ -2,6 +2,7 @@ import { get, set } from "idb-keyval";
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 
 import { TABLES, COMPANION_SOURCE, type BookStatus, type ProgressType } from "./schema";
+import { SPOILER_TAG } from "./moment-types";
 
 const QUEUE_KEY = "bookkase:companion:pending-writes:v2";
 
@@ -27,6 +28,8 @@ export type QueuedWrite =
       progressValue: string | null;
       note: string;
       tags: string[];
+      momentType: string | null;
+      spoiler: boolean;
       createdAt: string;
       attempts: number;
     };
@@ -184,22 +187,30 @@ async function runOne(supabase: SupabaseClient, item: QueuedWrite) {
       progressValue: item.progressValue,
     });
 
-    const j = await supabase.from(TABLES.journey).upsert(
-      {
-        id: item.id,
-        user_id: item.userId,
-        book_id: item.bookId,
-        source: COMPANION_SOURCE,
-        entry_type: "moment",
-        progress_type: item.progressType,
-        progress_value: item.progressValue,
-        note: item.note,
-        tags: item.tags && item.tags.length > 0 ? item.tags : null,
-        created_at: item.createdAt,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "id", ignoreDuplicates: false }
-    );
+    // Merge in the spoiler sentinel tag when the user flagged it.
+    const baseTags = item.tags ?? [];
+    const withSpoiler = item.spoiler
+      ? Array.from(new Set([...baseTags, SPOILER_TAG]))
+      : baseTags;
+
+    const momentPayload: Record<string, unknown> = {
+      id: item.id,
+      user_id: item.userId,
+      book_id: item.bookId,
+      source: COMPANION_SOURCE,
+      entry_type: "moment",
+      progress_type: item.progressType,
+      progress_value: item.progressValue,
+      note: item.note,
+      tags: withSpoiler.length > 0 ? withSpoiler : null,
+      created_at: item.createdAt,
+      updated_at: new Date().toISOString(),
+    };
+    if (item.momentType) momentPayload.moment_type = item.momentType;
+
+    const j = await supabase
+      .from(TABLES.journey)
+      .upsert(momentPayload, { onConflict: "id", ignoreDuplicates: false });
     if (j.error) throw describeError("reading_journey upsert failed", j.error);
   }
 }

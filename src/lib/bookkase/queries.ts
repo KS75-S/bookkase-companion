@@ -299,6 +299,8 @@ export interface AddMomentInput {
   tags?: string[];
   progressType?: ProgressType | null;
   progressValue?: string | null;
+  momentType?: string | null;
+  spoiler?: boolean;
 }
 
 export function useAddMoment() {
@@ -320,6 +322,8 @@ export function useAddMoment() {
         progressValue: input.progressValue ?? null,
         note: input.note,
         tags: input.tags ?? [],
+        momentType: input.momentType ?? null,
+        spoiler: !!input.spoiler,
         createdAt,
         attempts: 0,
       });
@@ -331,6 +335,7 @@ export function useAddMoment() {
     },
   });
 }
+
 
 
 export function useDeleteJourneyEntry() {

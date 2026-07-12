@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BookPlus } from "lucide-react";
+import { BookPlus, CalendarDays } from "lucide-react";
 
 import { useActiveBooks } from "@/lib/bookkase/queries";
 import { BookCard } from "@/components/bookkase/BookCard";
 import { ChooseFromLibrarySheet } from "@/components/bookkase/ChooseFromLibrarySheet";
+import { ChooseFromPlanSheet } from "@/components/bookkase/ChooseFromPlanSheet";
 import type { UserBook } from "@/lib/bookkase/types";
 
 export const Route = createFileRoute("/_app/reading")({

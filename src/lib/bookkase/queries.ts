@@ -11,7 +11,7 @@ import {
   type ProgressType,
 } from "./schema";
 
-import type { JourneyEntry, UserBook } from "./types";
+import type { JourneyEntry, ReadingPlanEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";
 
 const DEV = import.meta.env.DEV;
@@ -420,3 +420,105 @@ export function useManualSync() {
     },
   });
 }
+
+/**
+ * Load the user's reading plan grouped by (scheduled_year, scheduled_month).
+ * Attempts to order by `position` first; falls back to `created_at` if the
+ * column doesn't exist in this schema.
+ */
+export function useReadingPlan() {
+  const supabase = useSupabase();
+  const { user, isSignedIn } = useUser();
+  return useQuery<ReadingPlanEntry[]>({
+    enabled: !!isSignedIn && !!user,
+    queryKey: ["bookkase", "reading-plan", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const select = `*, book:${TABLES.books}(${BOOK_COLUMNS})`;
+      // Try `position` first
+      let res = await supabase
+        .from(TABLES.readingPlan)
+        .select(select)
+        .eq("user_id", user.id)
+        .order("scheduled_year", { ascending: true })
+        .order("scheduled_month", { ascending: true })
+        .order("position", { ascending: true });
+      if (res.error) {
+        const msg = (res.error.message ?? "").toLowerCase();
+        if (/column .*position|does not exist|schema cache/.test(msg)) {
+          res = await supabase
+            .from(TABLES.readingPlan)
+            .select(select)
+            .eq("user_id", user.id)
+            .order("scheduled_year", { ascending: true })
+            .order("scheduled_month", { ascending: true })
+            .order("created_at", { ascending: true });
+        }
+      }
+      if (res.error) {
+        if (DEV) console.error("[bookkase] reading plan load failed", res.error);
+        throw res.error;
+      }
+      devLog("reading plan loaded", { count: res.data?.length ?? 0 });
+      return (res.data ?? []) as unknown as ReadingPlanEntry[];
+    },
+  });
+}
+
+export interface SetCurrentlyReadingByBookInput {
+  bookId: string;
+  isAudio?: boolean;
+}
+
+/**
+ * Set a book as currently reading by book_id. If the user already has a
+ * user_books row for this book, updates its status; otherwise inserts one.
+ */
+export function useSetCurrentlyReadingByBookId() {
+  const supabase = useSupabase();
+  const qc = useQueryClient();
+  const { user } = useUser();
+  return useMutation({
+    mutationFn: async ({ bookId, isAudio }: SetCurrentlyReadingByBookInput) => {
+      if (!user) throw new Error("Not signed in");
+      const nextStatus: BookStatus = isAudio ? "listening" : "reading";
+      const now = new Date().toISOString();
+
+      const { data: existing, error: findErr } = await supabase
+        .from(TABLES.userBooks)
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("book_id", bookId)
+        .maybeSingle();
+      if (findErr) {
+        if (DEV) console.error("[bookkase] find user_book failed", findErr);
+        throw findErr;
+      }
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from(TABLES.userBooks)
+          .update({ status: nextStatus, updated_at: now })
+          .eq("id", existing.id)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from(TABLES.userBooks)
+          .insert({
+            user_id: user.id,
+            book_id: bookId,
+            status: nextStatus,
+            updated_at: now,
+          });
+        if (error) throw error;
+      }
+      return { bookId, status: nextStatus };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookkase", "active-books"] });
+      qc.invalidateQueries({ queryKey: ["bookkase", "library-books"] });
+    },
+  });
+}
+

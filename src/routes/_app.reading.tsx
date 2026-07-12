@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BookPlus } from "lucide-react";
+import { BookPlus, CalendarDays } from "lucide-react";
 
 import { useActiveBooks } from "@/lib/bookkase/queries";
 import { BookCard } from "@/components/bookkase/BookCard";
 import { ChooseFromLibrarySheet } from "@/components/bookkase/ChooseFromLibrarySheet";
+import { ChooseFromPlanSheet } from "@/components/bookkase/ChooseFromPlanSheet";
 import type { UserBook } from "@/lib/bookkase/types";
 
 export const Route = createFileRoute("/_app/reading")({
@@ -42,23 +43,39 @@ function Section({
   );
 }
 
-function EmptyState({ onChoose }: { onChoose: () => void }) {
+function EmptyState({
+  onChooseLibrary,
+  onChoosePlan,
+}: {
+  onChooseLibrary: () => void;
+  onChoosePlan: () => void;
+}) {
   return (
     <div className="bk-card mt-6 px-6 py-12 text-center">
       <h2 className="bk-display text-2xl text-foreground">Nothing in progress yet</h2>
       <p className="bk-accent mt-3 text-base text-muted-foreground">
-        Choose a book from your library to start tracking your reading.
+        Choose a book from your library or reading plan to start tracking.
       </p>
-      <button className="bk-pill mt-5 inline-flex items-center gap-1.5" onClick={onChoose}>
-        <BookPlus size={14} />
-        Choose from Library
-      </button>
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <button className="bk-pill inline-flex items-center gap-1.5" onClick={onChooseLibrary}>
+          <BookPlus size={14} />
+          Choose from Library
+        </button>
+        <button
+          className="bk-pill-ghost inline-flex items-center gap-1.5"
+          onClick={onChoosePlan}
+        >
+          <CalendarDays size={14} />
+          Choose from Plan
+        </button>
+      </div>
     </div>
   );
 }
 
 function ReadingPage() {
   const [chooseOpen, setChooseOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
   const { data, isLoading, error, refetch } = useActiveBooks();
 
   if (isLoading) {
@@ -93,10 +110,20 @@ function ReadingPage() {
   return (
     <div>
       {books.length === 0 ? (
-        <EmptyState onChoose={() => setChooseOpen(true)} />
+        <EmptyState
+          onChooseLibrary={() => setChooseOpen(true)}
+          onChoosePlan={() => setPlanOpen(true)}
+        />
       ) : (
         <>
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex flex-wrap justify-end gap-2">
+            <button
+              className="bk-pill-ghost inline-flex items-center gap-1.5 text-sm"
+              onClick={() => setPlanOpen(true)}
+            >
+              <CalendarDays size={14} />
+              Choose from Plan
+            </button>
             <button
               className="bk-pill-ghost inline-flex items-center gap-1.5 text-sm"
               onClick={() => setChooseOpen(true)}
@@ -111,6 +138,8 @@ function ReadingPage() {
       )}
 
       <ChooseFromLibrarySheet open={chooseOpen} onOpenChange={setChooseOpen} />
+      <ChooseFromPlanSheet open={planOpen} onOpenChange={setPlanOpen} />
     </div>
   );
 }
+

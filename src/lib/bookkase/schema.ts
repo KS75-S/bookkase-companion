@@ -9,6 +9,7 @@ export const TABLES = {
   books: "books",
   userBooks: "user_books",
   journey: "reading_journey",
+  readingPlan: "reading_plan",
 } as const;
 
 /**

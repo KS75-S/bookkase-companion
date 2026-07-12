@@ -11,7 +11,7 @@ import {
   type ProgressType,
 } from "./schema";
 
-import type { JourneyEntry, UserBook } from "./types";
+import type { JourneyEntry, ReadingPlanEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";
 
 const DEV = import.meta.env.DEV;

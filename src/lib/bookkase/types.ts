@@ -37,4 +37,16 @@ export interface JourneyEntry {
   book?: Book | null;
 }
 
+export interface ReadingPlanEntry {
+  id: string;
+  user_id: string;
+  book_id: string;
+  scheduled_month: number;
+  scheduled_year: number;
+  position?: number | null;
+  created_at?: string | null;
+  book?: Book | null;
+}
+
+
 

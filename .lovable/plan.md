@@ -1,44 +1,51 @@
-## Goal
-Fix missing book covers by mapping BookKase's real `books.cover` (text) column into the app's `book.cover_url`, and handle Supabase Storage `covers/` bucket paths.
+## Problem
 
-## Changes
+The Reading tab (and Library, Journey, Plan) fail with:
 
-### 1. `src/lib/bookkase/schema.ts`
-Add a `BOOK_COLUMNS` constant listing the columns to select from `books`:
-```ts
-export const BOOK_COLUMNS = "id,title,author,cover,total_pages,total_chapters,total_duration_seconds";
-export const COVERS_BUCKET = "covers";
+```
+invalid input syntax for type uuid: "user_3EYm3OqLemQQM11q1drAotndguw"
 ```
 
-### 2. `src/lib/bookkase/types.ts`
-Change the `Book` interface field from `cover_url` to `cover` (matches real column). Keep the rest as-is.
+BookKase's `user_books.user_id`, `reading_journey.user_id`, and `reading_plan.user_id` are `uuid` columns. RLS matches them against `auth.uid()`, which — via your Clerk JWT template (`sub = user.external_id`) — resolves to the Supabase uuid.
 
-### 3. New helper `src/lib/bookkase/covers.ts`
-Export `resolveCoverUrl(supabase, cover: string | null): string | null`:
-- `null` / empty → `null`
-- Starts with `http://` or `https://` (external provider URL) → return as-is
-- Otherwise treat as a Storage object path in the `covers` bucket → return `supabase.storage.from("covers").getPublicUrl(path).data.publicUrl`
-- Strip a leading `covers/` prefix if present so both `foo.jpg` and `covers/foo.jpg` work
+The Companion, however, is filtering and inserting with `useUser().user.id` from Clerk, which is the Clerk-native id (`user_...`), not the uuid. Postgres rejects it before RLS is even consulted.
 
-### 4. `src/lib/bookkase/queries.ts`
-Replace the wildcard nested select `book:books(*)` with an explicit projection using `BOOK_COLUMNS` in `useActiveBooks`, `useLibraryBooks`, and `useJourney` (anywhere `books(*)` appears). This ensures the `cover` column is fetched and avoids relying on the legacy `cover_url` name.
+## Fix
 
-### 5. Consumers
-Update the two render sites to resolve the URL through the helper:
-- `src/components/bookkase/BookCard.tsx` — replace `book.cover_url` with `resolveCoverUrl(supabase, book?.cover)` (memoized via `useMemo`, using `useSupabase()`).
-- `src/components/bookkase/ChooseFromLibrarySheet.tsx` — same swap for the thumbnail.
-- `src/components/bookkase/JourneyEntry.tsx` — if a cover thumbnail is rendered there, apply the same swap; otherwise leave alone.
+Read the Supabase uuid from Clerk's `user.externalId` and use it everywhere the app currently uses `user.id`.
 
-Also update `useAddManualBook` in `queries.ts`: if it currently writes to `cover_url`, rename that field to `cover` (keeping the existing "drop columns on missing" fallback intact).
+### 1. Central helper
 
-### 6. Alt text
-Set `alt={book?.title ? \`Cover of ${book.title}\` : "Book cover"}` on the `<img>` tags (previously `alt=""`) — small SEO/a11y win while we're touching these files.
+Add `src/lib/bookkase/use-supabase-user-id.ts`:
 
-## Out of scope
-- No new upload UI, no bucket creation, no RLS changes. The `covers` bucket is assumed to exist and be publicly readable in the user's BookKase project (that's how the main web app serves them).
-- No changes to Journey moment/status logic.
+- Wraps `useUser()` and returns `{ userId: string | null, isSignedIn, isLoaded }`.
+- `userId` is `user.externalId ?? null`.
+- If signed-in but `externalId` is missing, log a dev-mode warning ("Clerk user has no externalId — check JWT template / user provisioning") and return `null` so queries stay disabled instead of firing bad requests.
+
+### 2. Swap call sites
+
+Replace every `const { user } = useUser()` + `user.id` in these files with the helper's `userId`:
+
+- `src/lib/bookkase/queries.ts` — every hook: `useActiveBooks`, `useLibraryBooks`, `useSetCurrentlyReading`, `useAddManualBook`, `useJourney`, `useUpdateProgress`, `useAddMoment`, `useDeleteJourneyEntry`, `useUpdateJourneyEntry`, `useReadingPlan`, `useSetCurrentlyReadingByBookId`.
+  - Query `enabled` becomes `!!userId`.
+  - Query keys use `userId` (so cache re-keys correctly).
+  - `.eq("user_id", userId)` and insert payloads (`user_id: userId`) use the uuid.
+- `src/lib/bookkase/offline-queue.ts` — the enqueued `userId` field is already whatever the mutation passes in, so once the mutations pass `userId` (the uuid) it flows through unchanged. Verify the two upsert paths (progress, moment) still send `user_id: item.userId`.
+
+No schema, RLS, or JWT-template changes — those are already correct on the BookKase side.
+
+### 3. Empty-state guard on Reading
+
+`src/routes/_app.reading.tsx` currently shows the generic "We couldn't reach your library" card on any error. Once queries stop 400-ing, this will resolve on its own; no code change needed there. If `externalId` is somehow null for a valid Clerk user, the query is disabled and the page renders the normal empty state instead of an error.
 
 ## Verification
-- Build passes.
-- On the Reading tab, cards with a `books.cover` value show the image; cards without still show the `BookOpen` fallback.
-- External URLs (Open Library / Google Books) and Storage-relative paths both render.
+
+1. Reload `/reading` while signed in — no `22P02` errors in the console, active books render (or the real empty state if none).
+2. Journey tab loads without error.
+3. "Choose from Plan" and "Choose from Library" sheets populate.
+4. Capture a moment / update progress — row appears in `reading_journey` with `user_id` matching `auth.uid()`.
+
+## Out of scope
+
+- Any Supabase migrations, RLS edits, or Clerk JWT-template changes.
+- Refactoring the offline queue schema (bump not needed — `userId` field semantics change from Clerk id to uuid, but nothing in-flight is expected on a broken build).

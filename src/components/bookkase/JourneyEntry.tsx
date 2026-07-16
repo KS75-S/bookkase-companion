@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { AlertCircle, Eye, Pencil, Trash2 } from "lucide-react";
 
 import type { JourneyEntry } from "@/lib/bookkase/types";
 import { useDeleteJourneyEntry, useUpdateJourneyEntry } from "@/lib/bookkase/queries";
@@ -9,7 +9,21 @@ import {
   PORTRAIT_TAGS,
 } from "@/lib/bookkase/portrait-tags";
 import { ExpansionArtifactIcon } from "@/lib/bookkase/expansion-artifacts";
-import { SPOILER_TAG, momentTypeLabel } from "@/lib/bookkase/moment-types";
+import {
+  NEEDS_REVIEW_TAG,
+  RATING_PREFIX,
+  SPICE_PREFIX,
+  SPOILER_TAG,
+  momentTypeLabel,
+  parseRatingTag,
+  parseSpiceTag,
+  type PersonalRating,
+} from "@/lib/bookkase/moment-types";
+import {
+  PersonalRatingDisplay,
+  SpiceRatingDisplay,
+} from "./RatingWidgets";
+import { ReviewDialog } from "./ReviewDialog";
 import {
   AlertDialog,
   AlertDialogAction,

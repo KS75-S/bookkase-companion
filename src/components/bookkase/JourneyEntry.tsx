@@ -82,6 +82,14 @@ function resolveEntryTags(entry: JourneyEntry): {
         spoiler = true;
         continue;
       }
+      // Skip review sentinels — they are not portrait tags.
+      if (
+        v === NEEDS_REVIEW_TAG ||
+        v.startsWith(RATING_PREFIX) ||
+        v.startsWith(SPICE_PREFIX)
+      ) {
+        continue;
+      }
       const t = resolveTag(v);
       if (t) ids.push(t.id);
     }

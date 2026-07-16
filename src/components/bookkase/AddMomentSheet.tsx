@@ -128,35 +128,56 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
             </label>
 
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Reading Portrait Tags
-              </p>
-              <div className="grid grid-cols-5 gap-2">
-                {PORTRAIT_TAGS.map((t) => {
-                  const active = selectedIds.includes(t.id);
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => toggle(t.id)}
-                      aria-pressed={active}
-                      title={t.subtitle}
-                      className={`flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition ${
-                        active
-                          ? "border-foreground/60 bg-foreground/5 text-foreground"
-                          : "border-transparent text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <ExpansionArtifactIcon
-                        id={t.id}
-                        className="h-9 w-9"
-                        aria-hidden="true"
-                      />
-                      <span className="text-[10px] leading-tight">{t.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <button
+                type="button"
+                onClick={() => setTagsOpen((v) => !v)}
+                aria-expanded={tagsOpen}
+                className="flex w-full items-center justify-between rounded-xl border border-border/70 bg-background px-3 py-2.5 text-left"
+              >
+                <span>
+                  <span className="block text-sm font-medium text-foreground">
+                    Reading Portrait Tags
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {selectedIds.length > 0
+                      ? `${selectedIds.length} selected`
+                      : "Tap to add tags (optional)"}
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 flex-none text-muted-foreground transition-transform ${
+                    tagsOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {tagsOpen ? (
+                <div className="mt-3 grid grid-cols-5 gap-2">
+                  {PORTRAIT_TAGS.map((t) => {
+                    const active = selectedIds.includes(t.id);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggle(t.id)}
+                        aria-pressed={active}
+                        title={t.subtitle}
+                        className={`flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition ${
+                          active
+                            ? "border-foreground/60 bg-foreground/5 text-foreground"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <ExpansionArtifactIcon
+                          id={t.id}
+                          className="h-9 w-9"
+                          aria-hidden="true"
+                        />
+                        <span className="text-[10px] leading-tight">{t.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
 
 

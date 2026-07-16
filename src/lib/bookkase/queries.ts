@@ -10,6 +10,14 @@ import {
   type BookStatus,
   type ProgressType,
 } from "./schema";
+import {
+  NEEDS_REVIEW_TAG,
+  RATING_PREFIX,
+  SPICE_PREFIX,
+  encodeRatingTag,
+  encodeSpiceTag,
+  type PersonalRating,
+} from "./moment-types";
 
 import type { JourneyEntry, ReadingPlanEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";

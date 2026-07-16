@@ -10,6 +10,14 @@ import {
   type BookStatus,
   type ProgressType,
 } from "./schema";
+import {
+  NEEDS_REVIEW_TAG,
+  RATING_PREFIX,
+  SPICE_PREFIX,
+  encodeRatingTag,
+  encodeSpiceTag,
+  type PersonalRating,
+} from "./moment-types";
 
 import type { JourneyEntry, ReadingPlanEntry, UserBook } from "./types";
 import { enqueueWrite, flushQueue } from "./offline-queue";
@@ -489,6 +497,83 @@ export function useSetCurrentlyReadingByBookId() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bookkase", "active-books"] });
       qc.invalidateQueries({ queryKey: ["bookkase", "library-books"] });
+    },
+  });
+}
+
+export interface SaveReviewInput {
+  entryId: string;
+  needsReview?: boolean;
+  rating?: PersonalRating | null;
+  spice?: number | null;
+  review?: string | null;
+}
+
+/**
+ * Attach review data to a finished journey entry. Review content lives in the
+ * entry's `note`; the pending flag and numeric ratings are encoded as sentinel
+ * values in the existing `tags` array so no schema changes are required.
+ */
+export function useSaveReview() {
+  const supabase = useSupabase();
+  const qc = useQueryClient();
+  const { userId } = useSupabaseUserId();
+  return useMutation({
+    mutationFn: async (input: SaveReviewInput) => {
+      if (!userId) throw new Error("Not signed in");
+      const { data: existing, error: fetchErr } = await supabase
+        .from(TABLES.journey)
+        .select("tags,note")
+        .eq("id", input.entryId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (fetchErr) {
+        if (DEV) console.error("[bookkase] save review fetch failed", fetchErr);
+        throw fetchErr;
+      }
+
+      // Strip any prior review sentinels so we can overwrite cleanly.
+      const priorTags: string[] = Array.isArray(existing?.tags) ? existing!.tags : [];
+      const nextTags = priorTags.filter(
+        (t) =>
+          t !== NEEDS_REVIEW_TAG &&
+          !t.startsWith(RATING_PREFIX) &&
+          !t.startsWith(SPICE_PREFIX),
+      );
+
+      const patch: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (input.needsReview) {
+        nextTags.push(NEEDS_REVIEW_TAG);
+      } else {
+        if (input.rating !== undefined && input.rating !== null) {
+          nextTags.push(encodeRatingTag(input.rating));
+        }
+        if (input.spice !== undefined && input.spice !== null) {
+          nextTags.push(encodeSpiceTag(input.spice));
+        }
+        if (input.review !== undefined) {
+          patch.note = input.review;
+        }
+      }
+
+      patch.tags = nextTags.length > 0 ? nextTags : null;
+
+      const { error } = await supabase
+        .from(TABLES.journey)
+        .update(patch)
+        .eq("id", input.entryId)
+        .eq("user_id", userId);
+      if (error) {
+        if (DEV) console.error("[bookkase] save review failed", error);
+        throw error;
+      }
+      return { id: input.entryId };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookkase", "journey"] });
     },
   });
 }

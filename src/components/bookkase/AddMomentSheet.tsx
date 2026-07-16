@@ -37,6 +37,7 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [momentType, setMomentType] = useState<MomentType | "">("");
   const [spoiler, setSpoiler] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -44,6 +45,7 @@ export function AddMomentSheet({ open, onOpenChange, ub }: Props) {
       setSelectedIds([]);
       setMomentType("");
       setSpoiler(false);
+      setTagsOpen(false);
     }
   }, [open]);
 

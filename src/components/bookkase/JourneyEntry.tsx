@@ -396,6 +396,100 @@ function MomentCard({
 }
 
 
+function parseReviewData(entry: JourneyEntry): {
+  needsReview: boolean;
+  rating: PersonalRating | null;
+  spice: number | null;
+} {
+  let needsReview = false;
+  let rating: PersonalRating | null = null;
+  let spice: number | null = null;
+  for (const t of entry.tags ?? []) {
+    if (t === NEEDS_REVIEW_TAG) needsReview = true;
+    const r = parseRatingTag(t);
+    if (r !== null) rating = r;
+    const s = parseSpiceTag(t);
+    if (s !== null) spice = s;
+  }
+  return { needsReview, rating, spice };
+}
+
+function FinishedCard({ entry, progress }: { entry: JourneyEntry; progress: string | null }) {
+  const { needsReview, rating, spice } = parseReviewData(entry);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const hasReview = !!entry.note?.trim();
+  const hasRatings = rating !== null || spice !== null;
+
+  return (
+    <article className="rounded-xl border border-border/70 bg-card/60 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bk-ombre text-[10px] font-semibold text-white">
+          ✓
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-foreground">
+            <span className="font-medium">Finished</span>
+            {entry.book?.title ? <> · {entry.book.title}</> : null}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {progress ? `${progress} · ` : ""}
+            {formatDate(entry.created_at)}
+          </p>
+        </div>
+        {needsReview ? (
+          <button
+            type="button"
+            aria-label="Add review"
+            title="Review pending — tap to add"
+            onClick={() => setReviewOpen(true)}
+            className="grid h-7 w-7 flex-none place-items-center rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-600 transition hover:bg-amber-500/20"
+          >
+            <AlertCircle className="h-4 w-4" />
+          </button>
+        ) : null}
+        <EntryActions entry={entry} />
+      </div>
+
+      {(hasRatings || hasReview) && !needsReview ? (
+        <div className="mt-3 space-y-2 border-t border-border/50 pt-3">
+          {hasRatings ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {rating !== null ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    Rating
+                  </span>
+                  <PersonalRatingDisplay value={rating} />
+                </span>
+              ) : null}
+              {spice !== null ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    Spice
+                  </span>
+                  <SpiceRatingDisplay value={spice} />
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          {hasReview ? (
+            <p className="bk-accent whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
+              {entry.note}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <ReviewDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        entryId={entry.id}
+        bookTitle={entry.book?.title ?? null}
+      />
+    </article>
+  );
+}
+
 export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
   const progress = formatProgress(entry);
 
@@ -403,19 +497,17 @@ export function JourneyEntryCard({ entry }: { entry: JourneyEntry }) {
     return <MomentCard entry={entry} progress={progress} />;
   }
 
+  if (entry.entry_type === "finished") {
+    return <FinishedCard entry={entry} progress={progress} />;
+  }
 
-  // progress / status / finished — quieter compact card
-  const label =
-    entry.entry_type === "finished"
-      ? "Finished"
-      : entry.entry_type === "status"
-      ? "Status changed"
-      : "Progress";
+  // progress / status — quieter compact card
+  const label = entry.entry_type === "status" ? "Status changed" : "Progress";
 
   return (
     <article className="flex items-center gap-3 rounded-xl border border-border/70 bg-card/60 px-4 py-3">
       <span className="grid h-8 w-8 flex-none place-items-center rounded-full bk-ombre text-[10px] font-semibold text-white">
-        {label === "Finished" ? "✓" : label === "Progress" ? "↗" : "•"}
+        {label === "Progress" ? "↗" : "•"}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-foreground">

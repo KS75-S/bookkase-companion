@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 
 import {
   Sheet,
@@ -20,14 +21,16 @@ import {
 
 import type { UserBook } from "@/lib/bookkase/types";
 import type { BookStatus, ProgressType } from "@/lib/bookkase/schema";
-import { useUpdateProgress } from "@/lib/bookkase/queries";
-import { ReviewDialog } from "./ReviewDialog";
+import type { PersonalRating } from "@/lib/bookkase/moment-types";
+import { useSaveReview, useUpdateProgress } from "@/lib/bookkase/queries";
+import { PersonalRatingInput, SpiceRatingInput } from "./RatingWidgets";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   ub: UserBook;
 }
+
 
 /** Does this progress update indicate the user finished the book? */
 function isFinishingUpdate(

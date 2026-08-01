@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -22,8 +21,11 @@ import {
 import type { UserBook } from "@/lib/bookkase/types";
 import type { BookStatus, ProgressType } from "@/lib/bookkase/schema";
 import type { PersonalRating } from "@/lib/bookkase/moment-types";
+import { isRichTextEmpty, sanitizeRichText } from "@/lib/bookkase/rich-text";
 import { useSaveReview, useUpdateProgress } from "@/lib/bookkase/queries";
 import { PersonalRatingInput, SpiceRatingInput } from "./RatingWidgets";
+import { RichTextEditor } from "./RichTextEditor";
+
 
 interface Props {
   open: boolean;

@@ -183,29 +183,73 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
                 />
               </div>
 
+              {!showReview ? (
+                <button
+                  type="button"
+                  className="bk-pill-ghost inline-flex w-full items-center justify-center gap-1.5 text-sm"
+                  onClick={() => setShowReview(true)}
+                >
+                  <Sparkles size={14} />
+                  Ready to Review?
+                </button>
+              ) : (
+                <div className="space-y-5 rounded-xl border border-border/60 bg-background/40 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="bk-display text-lg">Your review</p>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline"
+                      onClick={() => setShowReview(false)}
+                    >
+                      Not yet
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Personal Rating
+                    </Label>
+                    <PersonalRatingInput value={rating} onChange={setRating} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Spice Rating
+                    </Label>
+                    <SpiceRatingInput value={spice} onChange={setSpice} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="review-text">
+                      Review <span className="text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Textarea
+                      id="review-text"
+                      value={review}
+                      onChange={(e) => setReview(e.target.value)}
+                      placeholder="What stayed with you?"
+                      rows={4}
+                      className="bk-display resize-none rounded-xl"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Saving marks this book as finished.
+                  </p>
+                </div>
+              )}
+
               <button
                 className="bk-pill mt-2 w-full text-base"
                 onClick={submit}
-                disabled={mutation.isPending || !progressValue.trim()}
+                disabled={busy || !progressValue.trim()}
               >
-                {mutation.isPending ? "Saving…" : "Save Update"}
+                {busy ? "Saving…" : showReview ? "Save Update & Review" : "Save Update"}
               </button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
-
-      {reviewEntryId ? (
-        <ReviewDialog
-          open={reviewOpen}
-          onOpenChange={(v) => {
-            setReviewOpen(v);
-            if (!v) setReviewEntryId(null);
-          }}
-          entryId={reviewEntryId}
-          bookTitle={ub.book?.title ?? null}
-        />
-      ) : null}
     </>
   );
 }
+

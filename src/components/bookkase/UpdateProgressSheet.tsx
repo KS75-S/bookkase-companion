@@ -48,14 +48,17 @@ function isFinishingUpdate(
 
 export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
   const mutation = useUpdateProgress();
+  const saveReview = useSaveReview();
   const [status, setStatus] = useState<BookStatus>(ub.status);
   const [progressType, setProgressType] = useState<ProgressType>(
     (ub.progress_type as ProgressType) ?? (ub.status === "listening" ? "timestamp" : "percentage")
   );
   const [progressValue, setProgressValue] = useState<string>(ub.progress_value ?? "");
   const [note, setNote] = useState("");
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewEntryId, setReviewEntryId] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
+  const [rating, setRating] = useState<PersonalRating | null>(null);
+  const [spice, setSpice] = useState<number | null>(null);
+  const [review, setReview] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -66,14 +69,20 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
       );
       setProgressValue(ub.progress_value ?? "");
       setNote("");
+      setShowReview(false);
+      setRating(null);
+      setSpice(null);
+      setReview("");
     }
   }, [open, ub]);
+
+  const busy = mutation.isPending || saveReview.isPending;
 
   const submit = async () => {
     const willFinish = isFinishingUpdate(status, progressType, progressValue);
     // Normalize status to `finished` so downstream (offline queue → journey
     // entry_type) writes a proper finished record we can attach a review to.
-    const effectiveStatus: BookStatus = willFinish ? "finished" : status;
+    const effectiveStatus: BookStatus = willFinish || showReview ? "finished" : status;
 
     const result = await mutation.mutateAsync({
       bookId: ub.book_id,
@@ -82,12 +91,26 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
       progressValue,
       note: note.trim() || null,
     });
-    onOpenChange(false);
-    if (willFinish && result?.id) {
-      setReviewEntryId(result.id);
-      setReviewOpen(true);
+
+    if (showReview && result?.id) {
+      const hasReview =
+        rating !== null || spice !== null || review.trim().length > 0;
+      try {
+        await saveReview.mutateAsync({
+          entryId: result.id,
+          needsReview: !hasReview,
+          rating,
+          spice,
+          review: review.trim() ? review.trim() : undefined,
+        });
+      } catch (err) {
+        if (import.meta.env.DEV) console.error("[bookkase] review save failed", err);
+      }
     }
+
+    onOpenChange(false);
   };
+
 
   return (
     <>

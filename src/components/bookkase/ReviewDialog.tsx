@@ -9,14 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 import { useSaveReview } from "@/lib/bookkase/queries";
+import { isRichTextEmpty, sanitizeRichText } from "@/lib/bookkase/rich-text";
 import type { PersonalRating } from "@/lib/bookkase/moment-types";
 import {
   PersonalRatingInput,
   SpiceRatingInput,
 } from "./RatingWidgets";
+import { RichTextEditor } from "./RichTextEditor";
+
 
 interface Props {
   open: boolean;

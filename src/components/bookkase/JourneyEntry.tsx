@@ -24,6 +24,8 @@ import {
   SpiceRatingDisplay,
 } from "./RatingWidgets";
 import { ReviewDialog } from "./ReviewDialog";
+import { RichTextView } from "./RichTextView";
+
 import {
   AlertDialog,
   AlertDialogAction,

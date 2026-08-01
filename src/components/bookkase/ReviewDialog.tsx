@@ -117,15 +117,14 @@ export function ReviewDialog({ open, onOpenChange, entryId, bookTitle }: Props) 
                 <Label htmlFor="review-text">
                   Review <span className="text-muted-foreground">(optional)</span>
                 </Label>
-                <Textarea
+                <RichTextEditor
                   id="review-text"
                   value={review}
-                  onChange={(e) => setReview(e.target.value)}
+                  onChange={setReview}
                   placeholder="What stayed with you?"
-                  rows={5}
-                  className="bk-display resize-none rounded-xl"
                 />
               </div>
+
             </div>
             <DialogFooter className="gap-2">
               <button

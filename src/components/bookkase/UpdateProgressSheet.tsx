@@ -172,16 +172,8 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Note <span className="text-muted-foreground">(optional)</span></Label>
-                <Textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="A line about where you left off…"
-                  rows={3}
-                  className="bk-accent text-base leading-relaxed"
-                />
-              </div>
+
+
 
               {!showReview ? (
                 <button

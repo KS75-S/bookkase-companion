@@ -215,15 +215,14 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
                     <Label htmlFor="review-text">
                       Review <span className="text-muted-foreground">(optional)</span>
                     </Label>
-                    <Textarea
+                    <RichTextEditor
                       id="review-text"
                       value={review}
-                      onChange={(e) => setReview(e.target.value)}
+                      onChange={setReview}
                       placeholder="What stayed with you?"
-                      rows={4}
-                      className="bk-display resize-none rounded-xl"
                     />
                   </div>
+
                   <p className="text-xs text-muted-foreground">
                     Saving marks this book as finished.
                   </p>

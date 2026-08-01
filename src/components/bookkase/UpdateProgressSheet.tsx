@@ -54,7 +54,6 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
     (ub.progress_type as ProgressType) ?? (ub.status === "listening" ? "timestamp" : "percentage")
   );
   const [progressValue, setProgressValue] = useState<string>(ub.progress_value ?? "");
-  const [note, setNote] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [rating, setRating] = useState<PersonalRating | null>(null);
   const [spice, setSpice] = useState<number | null>(null);
@@ -68,7 +67,6 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
           (ub.status === "listening" ? "timestamp" : "percentage")
       );
       setProgressValue(ub.progress_value ?? "");
-      setNote("");
       setShowReview(false);
       setRating(null);
       setSpice(null);
@@ -89,19 +87,20 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
       status: effectiveStatus,
       progressType,
       progressValue,
-      note: note.trim() || null,
+      note: null,
     });
 
     if (showReview && result?.id) {
-      const hasReview =
-        rating !== null || spice !== null || review.trim().length > 0;
+      const reviewHtml = sanitizeRichText(review);
+      const hasBody = !isRichTextEmpty(reviewHtml);
+      const hasReview = rating !== null || spice !== null || hasBody;
       try {
         await saveReview.mutateAsync({
           entryId: result.id,
           needsReview: !hasReview,
           rating,
           spice,
-          review: review.trim() ? review.trim() : undefined,
+          review: hasBody ? reviewHtml : undefined,
         });
       } catch (err) {
         if (import.meta.env.DEV) console.error("[bookkase] review save failed", err);
@@ -110,6 +109,7 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
 
     onOpenChange(false);
   };
+
 
 
   return (

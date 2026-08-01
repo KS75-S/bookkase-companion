@@ -52,15 +52,17 @@ export function ReviewDialog({ open, onOpenChange, entryId, bookTitle }: Props) 
   };
 
   const handleSaveNow = async () => {
+    const html = sanitizeRichText(review);
     await saveReview.mutateAsync({
       entryId,
       needsReview: false,
       rating,
       spice,
-      review: review.trim() || null,
+      review: isRichTextEmpty(html) ? null : html,
     });
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

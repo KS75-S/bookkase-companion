@@ -202,4 +202,32 @@
 
   .bk-display { font-family: var(--font-display); }
   .bk-accent  { font-family: var(--font-accent); font-style: italic; }
+
+  /* Rich-text review editor + viewer */
+  .bk-rich-editor:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-muted-foreground);
+  }
+  .bk-rich-editor ul,
+  .bk-rich-text ul { list-style: disc; padding-left: 1.25rem; }
+  .bk-rich-editor ol,
+  .bk-rich-text ol { list-style: decimal; padding-left: 1.25rem; }
+  .bk-rich-editor p,
+  .bk-rich-text p { margin: 0 0 0.5rem; }
+  .bk-rich-text p:last-child { margin-bottom: 0; }
+
+  .bk-rich-editor [data-spoiler="true"] {
+    background: color-mix(in oklab, var(--color-foreground) 12%, transparent);
+    border-radius: 0.25rem;
+    padding: 0 0.125rem;
+  }
+  .bk-rich-text [data-spoiler="true"] {
+    filter: blur(5px);
+    cursor: pointer;
+    border-radius: 0.25rem;
+    background: color-mix(in oklab, var(--color-foreground) 8%, transparent);
+    transition: filter 150ms ease;
+  }
+  .bk-rich-text [data-spoiler="true"][data-revealed] { filter: none; }
 }
+

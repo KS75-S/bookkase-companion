@@ -24,6 +24,8 @@ import {
   SpiceRatingDisplay,
 } from "./RatingWidgets";
 import { ReviewDialog } from "./ReviewDialog";
+import { RichTextView } from "./RichTextView";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -473,10 +475,12 @@ function FinishedCard({ entry, progress }: { entry: JourneyEntry; progress: stri
             </div>
           ) : null}
           {hasReview ? (
-            <p className="bk-accent whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
-              {entry.note}
-            </p>
+            <RichTextView
+              html={entry.note}
+              className="bk-accent text-sm leading-relaxed text-foreground/85"
+            />
           ) : null}
+
         </div>
       ) : null}
 

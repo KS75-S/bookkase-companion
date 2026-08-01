@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -22,8 +21,11 @@ import {
 import type { UserBook } from "@/lib/bookkase/types";
 import type { BookStatus, ProgressType } from "@/lib/bookkase/schema";
 import type { PersonalRating } from "@/lib/bookkase/moment-types";
+import { isRichTextEmpty, sanitizeRichText } from "@/lib/bookkase/rich-text";
 import { useSaveReview, useUpdateProgress } from "@/lib/bookkase/queries";
 import { PersonalRatingInput, SpiceRatingInput } from "./RatingWidgets";
+import { RichTextEditor } from "./RichTextEditor";
+
 
 interface Props {
   open: boolean;
@@ -54,7 +56,6 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
     (ub.progress_type as ProgressType) ?? (ub.status === "listening" ? "timestamp" : "percentage")
   );
   const [progressValue, setProgressValue] = useState<string>(ub.progress_value ?? "");
-  const [note, setNote] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [rating, setRating] = useState<PersonalRating | null>(null);
   const [spice, setSpice] = useState<number | null>(null);
@@ -68,7 +69,6 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
           (ub.status === "listening" ? "timestamp" : "percentage")
       );
       setProgressValue(ub.progress_value ?? "");
-      setNote("");
       setShowReview(false);
       setRating(null);
       setSpice(null);
@@ -89,19 +89,20 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
       status: effectiveStatus,
       progressType,
       progressValue,
-      note: note.trim() || null,
+      note: null,
     });
 
     if (showReview && result?.id) {
-      const hasReview =
-        rating !== null || spice !== null || review.trim().length > 0;
+      const reviewHtml = sanitizeRichText(review);
+      const hasBody = !isRichTextEmpty(reviewHtml);
+      const hasReview = rating !== null || spice !== null || hasBody;
       try {
         await saveReview.mutateAsync({
           entryId: result.id,
           needsReview: !hasReview,
           rating,
           spice,
-          review: review.trim() ? review.trim() : undefined,
+          review: hasBody ? reviewHtml : undefined,
         });
       } catch (err) {
         if (import.meta.env.DEV) console.error("[bookkase] review save failed", err);
@@ -110,6 +111,7 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
 
     onOpenChange(false);
   };
+
 
 
   return (
@@ -172,16 +174,8 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Note <span className="text-muted-foreground">(optional)</span></Label>
-                <Textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="A line about where you left off…"
-                  rows={3}
-                  className="bk-accent text-base leading-relaxed"
-                />
-              </div>
+
+
 
               {!showReview ? (
                 <button
@@ -223,15 +217,14 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
                     <Label htmlFor="review-text">
                       Review <span className="text-muted-foreground">(optional)</span>
                     </Label>
-                    <Textarea
+                    <RichTextEditor
                       id="review-text"
                       value={review}
-                      onChange={(e) => setReview(e.target.value)}
+                      onChange={setReview}
                       placeholder="What stayed with you?"
-                      rows={4}
-                      className="bk-display resize-none rounded-xl"
                     />
                   </div>
+
                   <p className="text-xs text-muted-foreground">
                     Saving marks this book as finished.
                   </p>

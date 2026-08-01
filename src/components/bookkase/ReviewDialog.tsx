@@ -9,14 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 import { useSaveReview } from "@/lib/bookkase/queries";
+import { isRichTextEmpty, sanitizeRichText } from "@/lib/bookkase/rich-text";
 import type { PersonalRating } from "@/lib/bookkase/moment-types";
 import {
   PersonalRatingInput,
   SpiceRatingInput,
 } from "./RatingWidgets";
+import { RichTextEditor } from "./RichTextEditor";
+
 
 interface Props {
   open: boolean;
@@ -50,15 +52,17 @@ export function ReviewDialog({ open, onOpenChange, entryId, bookTitle }: Props) 
   };
 
   const handleSaveNow = async () => {
+    const html = sanitizeRichText(review);
     await saveReview.mutateAsync({
       entryId,
       needsReview: false,
       rating,
       spice,
-      review: review.trim() || null,
+      review: isRichTextEmpty(html) ? null : html,
     });
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,15 +119,14 @@ export function ReviewDialog({ open, onOpenChange, entryId, bookTitle }: Props) 
                 <Label htmlFor="review-text">
                   Review <span className="text-muted-foreground">(optional)</span>
                 </Label>
-                <Textarea
+                <RichTextEditor
                   id="review-text"
                   value={review}
-                  onChange={(e) => setReview(e.target.value)}
+                  onChange={setReview}
                   placeholder="What stayed with you?"
-                  rows={5}
-                  className="bk-display resize-none rounded-xl"
                 />
               </div>
+
             </div>
             <DialogFooter className="gap-2">
               <button

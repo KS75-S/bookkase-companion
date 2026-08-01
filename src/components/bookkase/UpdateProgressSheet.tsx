@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 
 import {
   Sheet,
@@ -20,14 +21,16 @@ import {
 
 import type { UserBook } from "@/lib/bookkase/types";
 import type { BookStatus, ProgressType } from "@/lib/bookkase/schema";
-import { useUpdateProgress } from "@/lib/bookkase/queries";
-import { ReviewDialog } from "./ReviewDialog";
+import type { PersonalRating } from "@/lib/bookkase/moment-types";
+import { useSaveReview, useUpdateProgress } from "@/lib/bookkase/queries";
+import { PersonalRatingInput, SpiceRatingInput } from "./RatingWidgets";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   ub: UserBook;
 }
+
 
 /** Does this progress update indicate the user finished the book? */
 function isFinishingUpdate(
@@ -45,14 +48,17 @@ function isFinishingUpdate(
 
 export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
   const mutation = useUpdateProgress();
+  const saveReview = useSaveReview();
   const [status, setStatus] = useState<BookStatus>(ub.status);
   const [progressType, setProgressType] = useState<ProgressType>(
     (ub.progress_type as ProgressType) ?? (ub.status === "listening" ? "timestamp" : "percentage")
   );
   const [progressValue, setProgressValue] = useState<string>(ub.progress_value ?? "");
   const [note, setNote] = useState("");
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewEntryId, setReviewEntryId] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
+  const [rating, setRating] = useState<PersonalRating | null>(null);
+  const [spice, setSpice] = useState<number | null>(null);
+  const [review, setReview] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -63,14 +69,20 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
       );
       setProgressValue(ub.progress_value ?? "");
       setNote("");
+      setShowReview(false);
+      setRating(null);
+      setSpice(null);
+      setReview("");
     }
   }, [open, ub]);
+
+  const busy = mutation.isPending || saveReview.isPending;
 
   const submit = async () => {
     const willFinish = isFinishingUpdate(status, progressType, progressValue);
     // Normalize status to `finished` so downstream (offline queue → journey
     // entry_type) writes a proper finished record we can attach a review to.
-    const effectiveStatus: BookStatus = willFinish ? "finished" : status;
+    const effectiveStatus: BookStatus = willFinish || showReview ? "finished" : status;
 
     const result = await mutation.mutateAsync({
       bookId: ub.book_id,
@@ -79,12 +91,26 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
       progressValue,
       note: note.trim() || null,
     });
-    onOpenChange(false);
-    if (willFinish && result?.id) {
-      setReviewEntryId(result.id);
-      setReviewOpen(true);
+
+    if (showReview && result?.id) {
+      const hasReview =
+        rating !== null || spice !== null || review.trim().length > 0;
+      try {
+        await saveReview.mutateAsync({
+          entryId: result.id,
+          needsReview: !hasReview,
+          rating,
+          spice,
+          review: review.trim() ? review.trim() : undefined,
+        });
+      } catch (err) {
+        if (import.meta.env.DEV) console.error("[bookkase] review save failed", err);
+      }
     }
+
+    onOpenChange(false);
   };
+
 
   return (
     <>
@@ -157,29 +183,73 @@ export function UpdateProgressSheet({ open, onOpenChange, ub }: Props) {
                 />
               </div>
 
+              {!showReview ? (
+                <button
+                  type="button"
+                  className="bk-pill-ghost inline-flex w-full items-center justify-center gap-1.5 text-sm"
+                  onClick={() => setShowReview(true)}
+                >
+                  <Sparkles size={14} />
+                  Ready to Review?
+                </button>
+              ) : (
+                <div className="space-y-5 rounded-xl border border-border/60 bg-background/40 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="bk-display text-lg">Your review</p>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline"
+                      onClick={() => setShowReview(false)}
+                    >
+                      Not yet
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Personal Rating
+                    </Label>
+                    <PersonalRatingInput value={rating} onChange={setRating} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Spice Rating
+                    </Label>
+                    <SpiceRatingInput value={spice} onChange={setSpice} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="review-text">
+                      Review <span className="text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Textarea
+                      id="review-text"
+                      value={review}
+                      onChange={(e) => setReview(e.target.value)}
+                      placeholder="What stayed with you?"
+                      rows={4}
+                      className="bk-display resize-none rounded-xl"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Saving marks this book as finished.
+                  </p>
+                </div>
+              )}
+
               <button
                 className="bk-pill mt-2 w-full text-base"
                 onClick={submit}
-                disabled={mutation.isPending || !progressValue.trim()}
+                disabled={busy || !progressValue.trim()}
               >
-                {mutation.isPending ? "Saving…" : "Save Update"}
+                {busy ? "Saving…" : showReview ? "Save Update & Review" : "Save Update"}
               </button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
-
-      {reviewEntryId ? (
-        <ReviewDialog
-          open={reviewOpen}
-          onOpenChange={(v) => {
-            setReviewOpen(v);
-            if (!v) setReviewEntryId(null);
-          }}
-          entryId={reviewEntryId}
-          bookTitle={ub.book?.title ?? null}
-        />
-      ) : null}
     </>
   );
 }
+

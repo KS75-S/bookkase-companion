@@ -46,7 +46,7 @@ function AppLayout() {
   }
 
   if (!isSignedIn) {
-    return <Navigate to="/sign-in" />;
+    return <Navigate to="/sign-in/$" params={{ _splat: "" }} />;
   }
 
   return (

@@ -13,3 +13,32 @@ export const SUPABASE_ANON_KEY =
 
 /** Clerk JWT template name configured in the Clerk dashboard for Supabase. */
 export const CLERK_SUPABASE_TEMPLATE = "supabase";
+
+/**
+ * Base URL of the deployed BookKase web app (where the companion metadata
+ * endpoint lives). Configured at build time via VITE_BOOKKASE_BASE_URL, and
+ * overridable at runtime from the Profile screen (stored in localStorage).
+ */
+const BASE_URL_STORAGE_KEY = "bookkase:base-url";
+
+export const BOOKKASE_BASE_URL_DEFAULT =
+  (import.meta.env.VITE_BOOKKASE_BASE_URL as string | undefined)?.trim() ?? "";
+
+function normalizeBaseUrl(value: string): string {
+  return value.trim().replace(/\/+$/, "");
+}
+
+export function getBookKaseBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    const override = window.localStorage.getItem(BASE_URL_STORAGE_KEY);
+    if (override && override.trim()) return normalizeBaseUrl(override);
+  }
+  return normalizeBaseUrl(BOOKKASE_BASE_URL_DEFAULT);
+}
+
+export function setBookKaseBaseUrl(value: string) {
+  if (typeof window === "undefined") return;
+  const v = normalizeBaseUrl(value);
+  if (v) window.localStorage.setItem(BASE_URL_STORAGE_KEY, v);
+  else window.localStorage.removeItem(BASE_URL_STORAGE_KEY);
+}

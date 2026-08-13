@@ -14,5 +14,6 @@ function IndexRedirect() {
       </div>
     );
   }
-  return <Navigate to={isSignedIn ? "/reading" : "/sign-in"} />;
+  if (isSignedIn) return <Navigate to="/reading" />;
+  return <Navigate to="/sign-in/$" params={{ _splat: "" }} />;
 }

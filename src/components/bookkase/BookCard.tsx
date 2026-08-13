@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, Tags } from "lucide-react";
 
 import type { UserBook } from "@/lib/bookkase/types";
 import { useSupabase } from "@/lib/bookkase/supabase-provider";
@@ -7,6 +7,7 @@ import { resolveCoverUrl } from "@/lib/bookkase/covers";
 import { OmbreProgress } from "./OmbreProgress";
 import { UpdateProgressSheet } from "./UpdateProgressSheet";
 import { AddMomentSheet } from "./AddMomentSheet";
+import { AddToBookSheet } from "./AddToBookSheet";
 
 
 function parseTimestampSeconds(v: string): number | null {
@@ -83,6 +84,7 @@ function missingMetadataHint(ub: UserBook): string | null {
 export function BookCard({ ub }: { ub: UserBook }) {
   const [updateOpen, setUpdateOpen] = useState(false);
   const [momentOpen, setMomentOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const supabase = useSupabase();
 
   const book = ub.book;
@@ -138,10 +140,18 @@ export function BookCard({ ub }: { ub: UserBook }) {
           <Sparkles size={14} className="text-[color:var(--lavender)]" />
           Moment
         </button>
+        <button
+          className="bk-pill-ghost flex items-center gap-1.5 text-sm"
+          onClick={() => setDetailsOpen(true)}
+        >
+          <Tags size={14} className="text-[color:var(--indigo)]" />
+          Details
+        </button>
       </div>
 
       <UpdateProgressSheet open={updateOpen} onOpenChange={setUpdateOpen} ub={ub} />
       <AddMomentSheet open={momentOpen} onOpenChange={setMomentOpen} ub={ub} />
+      <AddToBookSheet open={detailsOpen} onOpenChange={setDetailsOpen} ub={ub} />
     </article>
   );
 }

@@ -7,13 +7,15 @@ import { AppHeader } from "@/components/bookkase/AppHeader";
 import { BottomNav } from "@/components/bookkase/BottomNav";
 import { useSupabase } from "@/lib/bookkase/supabase-provider";
 import { flushQueue } from "@/lib/bookkase/offline-queue";
+import { flushMetadataQueue } from "@/lib/bookkase/book-metadata";
+import { CLERK_SUPABASE_TEMPLATE, getBookKaseBaseUrl } from "@/lib/bookkase/config";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
 function AppLayout() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const supabase = useSupabase();
   const qc = useQueryClient();
 
@@ -25,6 +27,11 @@ function AppLayout() {
       if (res.synced > 0) {
         qc.invalidateQueries({ queryKey: ["bookkase"] });
       }
+      await flushMetadataQueue({
+        baseUrl: getBookKaseBaseUrl(),
+        getToken: () =>
+          getToken({ template: CLERK_SUPABASE_TEMPLATE }).catch(() => null),
+      });
     };
     sync();
     const onOnline = () => sync();
@@ -35,7 +42,7 @@ function AppLayout() {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("focus", onFocus);
     };
-  }, [isSignedIn, supabase, qc]);
+  }, [isSignedIn, supabase, qc, getToken]);
 
   if (!isLoaded) {
     return (

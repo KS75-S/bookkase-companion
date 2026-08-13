@@ -1,51 +1,42 @@
-## Problem
+# Capture while reading — push Moods / Tags / Tropes / Content Warnings to BookKase
 
-The Reading tab (and Library, Journey, Plan) fail with:
+Add a light "Add to this book" panel on the Reading screen so a user can attach emotional metadata to the book they're reading, and push it to BookKase's merge endpoint with the Clerk-issued Supabase access token the app already uses.
 
-```
-invalid input syntax for type uuid: "user_3EYm3OqLemQQM11q1drAotndguw"
-```
+## What the user sees
 
-BookKase's `user_books.user_id`, `reading_journey.user_id`, and `reading_plan.user_id` are `uuid` columns. RLS matches them against `auth.uid()`, which — via your Clerk JWT template (`sub = user.external_id`) — resolves to the Supabase uuid.
+On each book card under Reading, a third action: **Add to book**. Tapping it opens a sheet (same pattern as Capture Moment / Update Progress) with four chip inputs:
 
-The Companion, however, is filtering and inserting with `useUser().user.id` from Clerk, which is the Clerk-native id (`user_...`), not the uuid. Postgres rejects it before RLS is even consulted.
+- Moods
+- Tags
+- Tropes
+- Content Warnings (subdued styling)
 
-## Fix
+Each row: type a value, press Enter or comma to turn it into a chip, tap the x to remove it before saving. A short suggestion list of common values sits under each row for one-tap adding. Values are trimmed; duplicates within the row are dropped locally, the server handles the rest.
 
-Read the Supabase uuid from Clerk's `user.externalId` and use it everywhere the app currently uses `user.id`.
+**Save** sends one request. On success: a "Saved to library ✓" toast and the sheet closes. Removal of existing BookKase values is not part of this feature.
 
-### 1. Central helper
+Error states:
+- Session expired (401) — inline message "Your session expired — sign in again" with a Sign in action.
+- Book no longer available (403/404) — message saying the book is no longer in the BookKase library; no retry.
+- Rate limited (429) — "Too many saves, try again in Ns" using the Retry-After header; save stays in the sheet.
+- Offline / network failure — toast "Saved offline — will sync when you're back", the pending values are stored locally (one pending item per book) and retried on next app open and when the browser reports it's back online.
+- Bad request (400) — generic "Couldn't save" plus a console error; not retried.
 
-Add `src/lib/bookkase/use-supabase-user-id.ts`:
+## Technical details
 
-- Wraps `useUser()` and returns `{ userId: string | null, isSignedIn, isLoaded }`.
-- `userId` is `user.externalId ?? null`.
-- If signed-in but `externalId` is missing, log a dev-mode warning ("Clerk user has no externalId — check JWT template / user provisioning") and return `null` so queries stay disabled instead of firing bad requests.
+**Config** — new `BOOKKASE_BASE_URL` resolution in `src/lib/bookkase/config.ts`: reads `import.meta.env.VITE_BOOKKASE_BASE_URL`, with a localStorage override (`bookkase:base-url`) surfaced as a field on the Profile page so it can be changed without a rebuild. No hardcoded host in the call site.
 
-### 2. Swap call sites
+**Client** — new `src/lib/bookkase/book-metadata.ts`:
+- `patchBookMetadata({ baseUrl, token, bookId, moods, tags, tropes, contentWarnings })` → `PATCH {baseUrl}/api/companion/book-metadata` with `Authorization: Bearer <token>`, JSON body containing `bookId` plus only the non-empty fields as string arrays.
+- Returns a discriminated result: `{ ok: true, merged }` or `{ ok: false, kind: "unauthorized" | "badRequest" | "notFound" | "rateLimited" | "network" | "unknown", retryAfterSeconds? }` so the UI maps status codes to the messages above without throwing.
+- Token comes from Clerk `getToken({ template: "supabase" })` — the same token `SupabaseProvider` already injects into Supabase calls, so `sub` matches `reading_journey.user_id`.
 
-Replace every `const { user } = useUser()` + `user.id` in these files with the helper's `userId`:
+**Retry queue** — reuse the existing `idb-keyval` pattern from `offline-queue.ts` with a separate key (`bookkase:companion:pending-metadata:v1`) keyed by `bookId`; a new pending save for the same book merges into the existing entry. A flush runs on app mount and on `online`, mirroring how the write queue is drained today. Terminal errors (400/403/404) drop the item instead of retrying.
 
-- `src/lib/bookkase/queries.ts` — every hook: `useActiveBooks`, `useLibraryBooks`, `useSetCurrentlyReading`, `useAddManualBook`, `useJourney`, `useUpdateProgress`, `useAddMoment`, `useDeleteJourneyEntry`, `useUpdateJourneyEntry`, `useReadingPlan`, `useSetCurrentlyReadingByBookId`.
-  - Query `enabled` becomes `!!userId`.
-  - Query keys use `userId` (so cache re-keys correctly).
-  - `.eq("user_id", userId)` and insert payloads (`user_id: userId`) use the uuid.
-- `src/lib/bookkase/offline-queue.ts` — the enqueued `userId` field is already whatever the mutation passes in, so once the mutations pass `userId` (the uuid) it flows through unchanged. Verify the two upsert paths (progress, moment) still send `user_id: item.userId`.
+**UI** — new `src/components/bookkase/AddToBookSheet.tsx` using the existing Sheet + `bk-pill` chip styling already used in `AddMomentSheet`; wired from a new button in `BookCard.tsx`. A small reusable `ChipInput` lives inside that file rather than a new component library.
 
-No schema, RLS, or JWT-template changes — those are already correct on the BookKase side.
+No changes to the `reading_journey` write path, schema, RLS, or the Supabase queries.
 
-### 3. Empty-state guard on Reading
+## Open risk
 
-`src/routes/_app.reading.tsx` currently shows the generic "We couldn't reach your library" card on any error. Once queries stop 400-ing, this will resolve on its own; no code change needed there. If `externalId` is somehow null for a valid Clerk user, the query is disabled and the page renders the normal empty state instead of an error.
-
-## Verification
-
-1. Reload `/reading` while signed in — no `22P02` errors in the console, active books render (or the real empty state if none).
-2. Journey tab loads without error.
-3. "Choose from Plan" and "Choose from Library" sheets populate.
-4. Capture a moment / update progress — row appears in `reading_journey` with `user_id` matching `auth.uid()`.
-
-## Out of scope
-
-- Any Supabase migrations, RLS edits, or Clerk JWT-template changes.
-- Refactoring the offline queue schema (bump not needed — `userId` field semantics change from Clerk id to uuid, but nothing in-flight is expected on a broken build).
+The PATCH is cross-origin (companion host → BookKase host), so BookKase must return CORS headers allowing `PATCH` and the `Authorization` header from this origin. If it doesn't, the browser blocks the request and it surfaces as a network error (and queues). Worth confirming on the BookKase side; if CORS can't be opened, the call would need to be proxied through a server function here instead.

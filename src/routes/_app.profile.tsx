@@ -6,6 +6,9 @@ import { LogOut, RefreshCw } from "lucide-react";
 import { ThemeToggle } from "@/components/bookkase/ThemeToggle";
 import { useManualSync } from "@/lib/bookkase/queries";
 import { getPendingCount, subscribeQueue } from "@/lib/bookkase/offline-queue";
+import { getBookKaseBaseUrl, setBookKaseBaseUrl } from "@/lib/bookkase/config";
+import { getPendingMetadataCount } from "@/lib/bookkase/book-metadata";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({
@@ -26,6 +29,14 @@ function ProfilePage() {
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [pendingMeta, setPendingMeta] = useState(0);
+  const [baseUrl, setBaseUrl] = useState("");
+  const [urlSaved, setUrlSaved] = useState(false);
+
+  useEffect(() => {
+    setBaseUrl(getBookKaseBaseUrl());
+    getPendingMetadataCount().then(setPendingMeta);
+  }, []);
 
   useEffect(() => {
     const refresh = () => getPendingCount().then(setPending);
@@ -100,6 +111,10 @@ function ProfilePage() {
             <dd>{pending}</dd>
           </div>
           <div className="flex items-center justify-between">
+            <dt className="text-muted-foreground">Pending book details</dt>
+            <dd>{pendingMeta}</dd>
+          </div>
+          <div className="flex items-center justify-between">
             <dt className="text-muted-foreground">Last synced</dt>
             <dd>
               {lastSyncedAt
@@ -131,6 +146,35 @@ function ProfilePage() {
           </p>
           <ThemeToggle />
         </div>
+      </section>
+
+      <section className="bk-card p-5">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          BookKase library
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Where your library lives. Details you add while reading are sent here.
+        </p>
+        <Input
+          className="mt-3"
+          value={baseUrl}
+          placeholder="https://your-bookkase-site.com"
+          inputMode="url"
+          onChange={(e) => {
+            setBaseUrl(e.target.value);
+            setUrlSaved(false);
+          }}
+        />
+        <button
+          className="bk-pill mt-3 w-full text-sm"
+          onClick={() => {
+            setBookKaseBaseUrl(baseUrl);
+            setBaseUrl(getBookKaseBaseUrl());
+            setUrlSaved(true);
+          }}
+        >
+          {urlSaved ? "Saved" : "Save address"}
+        </button>
       </section>
 
       <section className="bk-card p-5">

@@ -6,7 +6,7 @@ The save never reached BookKase. The companion has no BookKase address configure
 
 ## Fix
 
-1. **Default the address.** Use `https://bookkase-f5rzph3m0-bookkase.vercel.app` as the built-in default base URL when neither the env value nor the Profile override is set. The Profile field still overrides it (useful for a custom domain later).
+1. **Default the address.** Use `https://bookkase.vercel.app` (the stable production host) as the built-in default base URL when neither the env value nor the Profile override is set. The Profile field still overrides it (useful for a custom domain later). Any previously stored Profile override pointing at a hashed `*-bookkase.vercel.app` deploy URL is ignored in favour of the stable host.
 
 2. **Stop hiding real causes.** In the Add to Details sheet, when the failure is a missing/invalid base URL, show "BookKase address isn't set — add it on Profile" with a link to Profile, instead of the generic message. Other 400s show the generic message plus the server's reason when it sends one.
 
@@ -16,7 +16,7 @@ The save never reached BookKase. The companion has no BookKase address configure
 
 ## Technical details
 
-- `src/lib/bookkase/config.ts`: `BOOKKASE_BASE_URL_DEFAULT` falls back to the Vercel host when `VITE_BOOKKASE_BASE_URL` is unset; base path stays the host only (the `/api/companion/book-metadata` suffix is appended by the client, so pasting the full endpoint into Profile is also tolerated by stripping a trailing `/api/companion/book-metadata`).
+- `src/lib/bookkase/config.ts`: `BOOKKASE_BASE_URL_DEFAULT` falls back to `https://bookkase.vercel.app` when `VITE_BOOKKASE_BASE_URL` is unset; base path stays the host only (the `/api/companion/book-metadata` suffix is appended by the client, so pasting the full endpoint into Profile is also tolerated by stripping a trailing `/api/companion/book-metadata`). Stale hashed-deploy overrides in localStorage are discarded on read.
 - `src/lib/bookkase/book-metadata.ts`: distinguish a "not configured" result from a server 400 (new `kind: "notConfigured"`), keep it terminal for the offline queue, and log method/URL/status on failure.
 - `src/components/bookkase/AddToBookSheet.tsx`: map `notConfigured` to the Profile-link message.
 
@@ -24,4 +24,4 @@ No schema, RLS, or `reading_journey` changes.
 
 ## Known risk
 
-The PATCH is cross-origin to the Vercel host. If BookKase doesn't send CORS headers allowing `PATCH` and `Authorization` from this origin, the browser blocks it and it surfaces as a network error (queued offline). If that happens, the follow-up is to proxy the call through a server function in this app.
+CORS for `/api/companion/:path*` is now live on BookKase, so the cross-origin PATCH should clear preflight. If a preflight still fails, it surfaces as a network error (queued offline) and the follow-up is to proxy the call through a server function in this app.

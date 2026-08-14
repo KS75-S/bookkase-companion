@@ -18,6 +18,7 @@ export interface BookMetadataFields {
 export type MetadataErrorKind =
   | "unauthorized"
   | "badRequest"
+  | "notConfigured"
   | "notFound"
   | "rateLimited"
   | "network"
@@ -29,8 +30,9 @@ export type PatchResult =
 
 /** Terminal failures should never be retried from the offline queue. */
 export function isTerminal(kind: MetadataErrorKind): boolean {
-  return kind === "badRequest" || kind === "notFound";
+  return kind === "badRequest" || kind === "notFound" || kind === "notConfigured";
 }
+
 
 const FIELDS = ["moods", "tags", "tropes", "contentWarnings"] as const;
 

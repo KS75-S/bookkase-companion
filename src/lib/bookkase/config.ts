@@ -21,17 +21,33 @@ export const CLERK_SUPABASE_TEMPLATE = "supabase";
  */
 const BASE_URL_STORAGE_KEY = "bookkase:base-url";
 
+/** Stable production host — deploy-specific hashed URLs must not be used. */
+const BOOKKASE_STABLE_HOST = "https://bookkase.vercel.app";
+
 export const BOOKKASE_BASE_URL_DEFAULT =
-  (import.meta.env.VITE_BOOKKASE_BASE_URL as string | undefined)?.trim() ?? "";
+  (import.meta.env.VITE_BOOKKASE_BASE_URL as string | undefined)?.trim() ||
+  BOOKKASE_STABLE_HOST;
 
 function normalizeBaseUrl(value: string): string {
-  return value.trim().replace(/\/+$/, "");
+  return value
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\/api\/companion\/book-metadata$/, "")
+    .replace(/\/+$/, "");
+}
+
+/** Old hashed Vercel deploy URLs drift; ignore them in favour of the stable host. */
+function isStaleOverride(value: string): boolean {
+  return /-bookkase\.vercel\.app$/.test(value);
 }
 
 export function getBookKaseBaseUrl(): string {
   if (typeof window !== "undefined") {
     const override = window.localStorage.getItem(BASE_URL_STORAGE_KEY);
-    if (override && override.trim()) return normalizeBaseUrl(override);
+    if (override && override.trim()) {
+      const v = normalizeBaseUrl(override);
+      if (v && !isStaleOverride(v)) return v;
+    }
   }
   return normalizeBaseUrl(BOOKKASE_BASE_URL_DEFAULT);
 }
@@ -42,3 +58,4 @@ export function setBookKaseBaseUrl(value: string) {
   if (v) window.localStorage.setItem(BASE_URL_STORAGE_KEY, v);
   else window.localStorage.removeItem(BASE_URL_STORAGE_KEY);
 }
+

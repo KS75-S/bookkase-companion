@@ -18,6 +18,7 @@ export interface BookMetadataFields {
 export type MetadataErrorKind =
   | "unauthorized"
   | "badRequest"
+  | "notConfigured"
   | "notFound"
   | "rateLimited"
   | "network"
@@ -29,8 +30,9 @@ export type PatchResult =
 
 /** Terminal failures should never be retried from the offline queue. */
 export function isTerminal(kind: MetadataErrorKind): boolean {
-  return kind === "badRequest" || kind === "notFound";
+  return kind === "badRequest" || kind === "notFound" || kind === "notConfigured";
 }
+
 
 const FIELDS = ["moods", "tags", "tropes", "contentWarnings"] as const;
 
@@ -73,8 +75,8 @@ export async function patchBookMetadata(args: {
   const { baseUrl, token, bookId, fields } = args;
 
   if (!token) return { ok: false, kind: "unauthorized" };
-  if (!baseUrl) {
-    return { ok: false, kind: "badRequest", message: "BookKase URL is not configured" };
+  if (!baseUrl || !/^https?:\/\//i.test(baseUrl)) {
+    return { ok: false, kind: "notConfigured", message: "BookKase URL is not configured" };
   }
 
   const body: Record<string, unknown> = { bookId };
@@ -86,9 +88,11 @@ export async function patchBookMetadata(args: {
     return { ok: false, kind: "badRequest", message: "Nothing to save" };
   }
 
+  const url = `${baseUrl.replace(/\/+$/, "")}/api/companion/book-metadata`;
+
   let res: Response;
   try {
-    res = await fetch(`${baseUrl.replace(/\/+$/, "")}/api/companion/book-metadata`, {
+    res = await fetch(url, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -97,9 +101,12 @@ export async function patchBookMetadata(args: {
       body: JSON.stringify(body),
     });
   } catch (err) {
-    console.warn("[bookkase] book-metadata network failure", err);
+    console.warn("[bookkase] PATCH", url, "network failure", err);
     return { ok: false, kind: "network" };
   }
+
+  if (!res.ok) console.warn("[bookkase] PATCH", url, "->", res.status);
+
 
   if (res.ok) {
     let merged: Required<BookMetadataFields> = {

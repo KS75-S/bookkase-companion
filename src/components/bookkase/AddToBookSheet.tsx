@@ -189,9 +189,17 @@ export function AddToBookSheet({ open, onOpenChange, ub }: Props) {
         toast("Saved offline — will sync when you're back");
         onOpenChange(false);
         break;
-      case "badRequest":
-        setError({ message: "Couldn't save these details. Please try again." });
+      case "notConfigured":
+        setError({ message: "BookKase address isn't set — add it on Profile." });
         break;
+      case "badRequest":
+        setError({
+          message: res.message
+            ? `Couldn't save these details: ${res.message}`
+            : "Couldn't save these details. Please try again.",
+        });
+        break;
+
       default:
         setError({ message: "Couldn't save these details. Please try again." });
     }

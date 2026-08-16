@@ -43,8 +43,8 @@
     "@supabase/supabase-js": "^2.106.2",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
-    "@tanstack/react-router": "^1.170.17",
-    "@tanstack/react-start": "^1.168.27",
+    "@tanstack/react-router": "^1.170.29",
+    "@tanstack/react-start": "^1.168.46",
     "@tanstack/router-plugin": "^1.168.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -88,9 +88,9 @@
     "vite": "^7.3.1"
   },
   "overrides": {
-    "js-yaml": "^4.2.0"
+    "js-yaml": "^4.3.0"
   },
   "resolutions": {
-    "js-yaml": "^4.2.0"
+    "js-yaml": "^4.3.0"
   }
 }

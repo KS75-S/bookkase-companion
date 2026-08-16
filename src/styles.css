@@ -165,30 +165,54 @@
     background-image: var(--gradient-ombre);
   }
 
+  .bk-shell-ombre {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.52) 100%),
+      linear-gradient(180deg, #f3e2c2 0%, #c3d3e8 50%, #e3c4d9 88%, #d8c6ea 100%);
+    background-attachment: fixed;
+  }
+
+  .dark .bk-shell-ombre,
+  html.theme-dark .bk-shell-ombre {
+    background: linear-gradient(
+      180deg,
+      rgba(46, 33, 72, 0.88) 0%,
+      rgba(62, 45, 101, 0.78) 38%,
+      rgba(39, 64, 112, 0.62) 72%,
+      rgba(111, 82, 38, 0.28) 100%
+    );
+    background-attachment: fixed;
+  }
+
   .bk-pill {
-    border-radius: 9999px;
+    border-radius: var(--radius-lg);
     padding: 0.625rem 1.125rem;
     font-family: var(--font-ui);
     font-weight: 600;
     letter-spacing: 0.005em;
+    text-align: center;
     color: oklch(0.985 0.012 85);
-    background-image: var(--gradient-ombre);
+    background-image: var(--bk-nav-active-gradient);
     box-shadow: var(--shadow-pill);
     transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
   }
+  .bk-pill:not(.inline-flex):not(.w-auto) { width: 100%; }
   .bk-pill:hover { filter: brightness(1.05); }
   .bk-pill:active { transform: translateY(1px); }
   .bk-pill:disabled { opacity: 0.6; filter: grayscale(0.2); }
 
   .bk-pill-ghost {
-    border-radius: 9999px;
+    border-radius: var(--radius-lg);
     padding: 0.625rem 1.125rem;
     font-family: var(--font-ui);
     font-weight: 600;
+    text-align: center;
     color: var(--color-foreground);
     background: var(--color-surface-2);
     border: 1px solid var(--color-border);
   }
+  .bk-pill-ghost:not(.inline-flex):not(.flex):not(.w-auto) { width: 100%; }
+
 
   .bk-card {
     background: var(--color-card);

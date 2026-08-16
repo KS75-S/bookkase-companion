@@ -82,12 +82,10 @@
   --indigo: oklch(0.48 0.12 270);                /* muted indigo */
   --gold: oklch(0.78 0.11 85);                   /* antique gold (accent only) */
 
-  --gradient-ombre: linear-gradient(
-    90deg,
-    var(--rose) 0%,
-    var(--lavender) 50%,
-    var(--indigo) 100%
-  );
+  --gradient-spine-h: linear-gradient(90deg, #8C4577, #F0748F, #399282);
+  --bk-nav-active-gradient: linear-gradient(135deg, #8c4577, #f0748f);
+  --gradient-ombre: var(--gradient-spine-h);
+
   --shadow-card: 0 1px 2px oklch(0.30 0.04 280 / 0.06), 0 8px 24px -12px oklch(0.30 0.04 280 / 0.10);
   --shadow-pill: 0 4px 14px -6px oklch(0.48 0.12 270 / 0.35);
 }

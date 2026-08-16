@@ -47,8 +47,9 @@
   --color-surface-2: var(--surface-2);
 
   --font-display: "Libre Baskerville", ui-serif, Georgia, serif;
-  --font-ui: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Karla", ui-sans-serif, system-ui, sans-serif;
   --font-accent: "Cormorant Garamond", ui-serif, Georgia, serif;
+
 }
 
 :root {

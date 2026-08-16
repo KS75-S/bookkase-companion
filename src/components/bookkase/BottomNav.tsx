@@ -28,7 +28,7 @@ export function BottomNav() {
               >
                 <span
                   className={`grid h-9 w-12 place-items-center rounded-full transition-all ${
-                    isActive ? "bk-ombre text-white shadow-[var(--shadow-pill)]" : "text-muted-foreground"
+                    isActive ? "bk-nav-active text-white shadow-[var(--shadow-pill)]" : "text-muted-foreground"
                   }`}
                 >
                   <Icon size={18} strokeWidth={isActive ? 2.25 : 2} />

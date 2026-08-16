@@ -57,7 +57,7 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="bk-shell-ombre min-h-screen pb-24">
       <AppHeader />
       <main className="mx-auto w-full max-w-md px-4 py-5">
         <Outlet />

@@ -104,7 +104,7 @@ function ChipInput({
             <button
               key={s}
               type="button"
-              className="bk-pill-ghost text-[11px] opacity-70"
+              className="bk-pill-ghost w-auto text-[11px] opacity-70"
               onClick={() => add(s)}
             >
               + {s}
@@ -252,7 +252,7 @@ export function AddToBookSheet({ open, onOpenChange, ub }: Props) {
             <div className="mt-4 rounded-xl border border-border bg-[color:var(--surface-2)]/60 p-3 text-sm">
               <p className="text-foreground">{error.message}</p>
               {error.action === "signin" ? (
-                <a href="/sign-in" className="bk-pill mt-2 inline-block text-xs">
+                <a href="/sign-in" className="bk-pill mt-2 inline-block w-auto text-xs">
                   Sign in
                 </a>
               ) : null}

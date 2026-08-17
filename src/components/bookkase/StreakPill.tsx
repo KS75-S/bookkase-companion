@@ -66,7 +66,12 @@ export function StreakPill() {
       title={label}
     >
       <Flame size={15} strokeWidth={2.2} color="#8C4577" aria-hidden="true" />
-      <span style={{ fontWeight: 600, color: "#2A1E33" }}>{current}d</span>
+      <span className="text-foreground" style={{ fontWeight: 600 }}>{current}d</span>
+      {current === 0 ? (
+        <span className="text-muted-foreground" style={{ fontSize: 13 }}>
+          Reading streak starts with your next update
+        </span>
+      ) : null}
       {dots > 0 ? (
         <span className="inline-flex items-center" style={{ gap: 4 }}>
           {Array.from({ length: dots }).map((_, i) => (

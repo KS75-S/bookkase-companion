@@ -88,6 +88,12 @@
 
   --shadow-card: 0 1px 2px oklch(0.30 0.04 280 / 0.06), 0 8px 24px -12px oklch(0.30 0.04 280 / 0.10);
   --shadow-pill: 0 4px 14px -6px oklch(0.48 0.12 270 / 0.35);
+
+  /* Reading streak pill */
+  --streak-flame: #8C4577;
+  --streak-dot-1: #8C4577;
+  --streak-dot-2: #F0748F;
+  --streak-dot-3: #399282;
 }
 
 .dark {
@@ -124,6 +130,12 @@
 
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.4), 0 10px 30px -15px oklch(0 0 0 / 0.55);
   --shadow-pill: 0 6px 18px -6px oklch(0.42 0.16 280 / 0.55);
+
+  /* Reading streak pill (dark) */
+  --streak-flame: #F0748F;
+  --streak-dot-1: #C97DB4;
+  --streak-dot-2: #F0748F;
+  --streak-dot-3: #48B3A0;
 }
 
 @layer base {

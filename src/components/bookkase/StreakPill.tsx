@@ -53,9 +53,7 @@ export function StreakPill() {
     };
   }, [load]);
 
-  if (!streak) return null;
-
-  const current = streak.currentStreak;
+  const current = streak?.currentStreak ?? 0;
   const dots = Math.min(current, MAX_DOTS);
   const overflow = current > MAX_DOTS ? current - MAX_DOTS : 0;
   const label = `${current} day reading streak`;

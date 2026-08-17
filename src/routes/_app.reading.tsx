@@ -6,6 +6,7 @@ import { useActiveBooks } from "@/lib/bookkase/queries";
 import { BookCard } from "@/components/bookkase/BookCard";
 import { ChooseFromLibrarySheet } from "@/components/bookkase/ChooseFromLibrarySheet";
 import { ChooseFromPlanSheet } from "@/components/bookkase/ChooseFromPlanSheet";
+import { StreakPill } from "@/components/bookkase/StreakPill";
 import type { UserBook } from "@/lib/bookkase/types";
 
 export const Route = createFileRoute("/_app/reading")({
@@ -131,6 +132,9 @@ function ReadingPage() {
               <BookPlus size={14} />
               Choose from Library
             </button>
+          </div>
+          <div className="mb-4">
+            <StreakPill />
           </div>
           <Section title="Currently Reading" books={reading} />
           <Section title="Currently Listening" books={listening} />

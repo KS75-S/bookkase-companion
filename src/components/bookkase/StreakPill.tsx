@@ -5,7 +5,7 @@ import { Flame } from "lucide-react";
 import { fetchReadingStreak, type ReadingStreak } from "@/lib/bookkase/reading-streak";
 import { CLERK_SUPABASE_TEMPLATE, getBookKaseBaseUrl } from "@/lib/bookkase/config";
 
-const DOT_COLORS = ["#8C4577", "#F0748F", "#399282"];
+const DOT_COLORS = ["var(--streak-dot-1)", "var(--streak-dot-2)", "var(--streak-dot-3)"];
 const DOT_OPACITY = [0.7, 0.8, 0.9];
 const MAX_DOTS = 14;
 
@@ -60,12 +60,12 @@ export function StreakPill() {
 
   return (
     <div
-      className="inline-flex items-center"
+      className="bk-card flex flex-wrap items-center justify-center px-4 py-3 text-center"
       style={{ gap: 8, minHeight: 44, fontFamily: "Karla, ui-sans-serif, system-ui, sans-serif", fontSize: 15 }}
       aria-label={label}
       title={label}
     >
-      <Flame size={15} strokeWidth={2.2} color="#8C4577" aria-hidden="true" />
+      <Flame size={15} strokeWidth={2.2} color="var(--streak-flame)" aria-hidden="true" />
       <span className="text-foreground" style={{ fontWeight: 600 }}>{current}d</span>
       {current === 0 ? (
         <span className="text-muted-foreground" style={{ fontSize: 13 }}>

@@ -36,9 +36,12 @@ function normalizeBaseUrl(value: string): string {
     .replace(/\/+$/, "");
 }
 
-/** Old hashed Vercel deploy URLs drift; ignore them in favour of the stable host. */
+/**
+ * Deploy-specific Vercel URLs drift between builds; ignore any vercel.app
+ * override that isn't the stable production alias.
+ */
 function isStaleOverride(value: string): boolean {
-  return /-bookkase\.vercel\.app$/.test(value);
+  return /\.vercel\.app$/i.test(value) && value.toLowerCase() !== BOOKKASE_STABLE_HOST;
 }
 
 export function getBookKaseBaseUrl(): string {

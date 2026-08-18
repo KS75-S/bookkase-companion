@@ -1,27 +1,45 @@
-# Fix "Couldn't save these details"
+# Why the library won't load
 
-## What's actually wrong
+## What the evidence shows
 
-The save never reached BookKase. The companion has no BookKase address configured — the Profile field is empty (verified: no `bookkase:base-url` value stored) and no build-time value exists in the project. The client returns a `badRequest` in that case, which the sheet renders as the generic "Couldn't save these details. Please try again."
+Every failing request is the same shape, e.g.:
 
-## Fix
+```text
+GET /rest/v1/user_books?...&user_id=eq.37a6ca13-7af4-4c5c-b73f-0b92bbfa0ff7
+400  {"code":"22P02","message":"invalid input syntax for type uuid: \"user_3DbIbrN4Wt1bbbeqL4A9a4HOqoM\""}
+```
 
-1. **Default the address.** Use `https://bookkase.vercel.app` (the stable production host) as the built-in default base URL when neither the env value nor the Profile override is set. The Profile field still overrides it (useful for a custom domain later). Any previously stored Profile override pointing at a hashed `*-bookkase.vercel.app` deploy URL is ignored in favour of the stable host.
+Two facts, both confirmed from the captured traffic:
 
-2. **Stop hiding real causes.** In the Add to Details sheet, when the failure is a missing/invalid base URL, show "BookKase address isn't set — add it on Profile" with a link to Profile, instead of the generic message. Other 400s show the generic message plus the server's reason when it sends one.
+1. The companion is sending the **correct** value. The filter is `user_id=eq.37a6ca13-…`, the Supabase uuid, taken from Clerk `externalId` via `useSupabaseUserId`. The Clerk id never appears in the query string.
+2. The rejected value, `user_3DbIbrN4Wt1bbbeqL4A9a4HOqoM`, is the **`sub` claim of the Clerk-issued Supabase JWT**. Decoding the token returned by `/tokens/supabase` shows:
+   - `"sub": "user_3DbIbrN4Wt1bbbeqL4A9a4HOqoM"`
+   - `"external_id": "37a6ca13-7af4-4c5c-b73f-0b92bbfa0ff7"`
 
-3. **Show what host was called.** Log the request URL and status to the console on failure so the next problem is diagnosable in one look.
+So Postgres is not choking on our filter — it is choking on `auth.uid()` inside the row-level security policy on `user_books` (and `reading_plan`, which fails identically). `auth.uid()` returns `sub` cast to `uuid`; `sub` is the Clerk `user_...` string, which is not a uuid, so the policy errors out with `22P02` before any row is evaluated.
 
-4. **Verify.** After the change, open Reading, add a mood chip, save, and confirm the request hits the Vercel host and returns success (or, if it returns 401/CORS, report exactly which so the BookKase side can be adjusted).
+The code comment in `use-supabase-user-id.ts` assumes the JWT template maps `sub` to `user.external_id`. It currently does not — it maps `external_id` to a separate claim and leaves `sub` as the Clerk id. That mismatch is the whole bug.
 
-## Technical details
+Nothing in this companion app can fix it: the app is already sending the only correct value it has.
 
-- `src/lib/bookkase/config.ts`: `BOOKKASE_BASE_URL_DEFAULT` falls back to `https://bookkase.vercel.app` when `VITE_BOOKKASE_BASE_URL` is unset; base path stays the host only (the `/api/companion/book-metadata` suffix is appended by the client, so pasting the full endpoint into Profile is also tolerated by stripping a trailing `/api/companion/book-metadata`). Stale hashed-deploy overrides in localStorage are discarded on read.
-- `src/lib/bookkase/book-metadata.ts`: distinguish a "not configured" result from a server 400 (new `kind: "notConfigured"`), keep it terminal for the offline queue, and log method/URL/status on failure.
-- `src/components/bookkase/AddToBookSheet.tsx`: map `notConfigured` to the Profile-link message.
+## The fix (one of two, both outside this repo)
 
-No schema, RLS, or `reading_journey` changes.
+**Option A — change the Clerk JWT template (preferred, one edit).**
+In the Clerk dashboard, the `supabase` JWT template's `sub` claim becomes `{{user.external_id}}`. Then `auth.uid()` returns the uuid, existing policies work unchanged, and both BookKase web and the companion benefit. Requires every Clerk user to have `external_id` populated (this account does).
 
-## Known risk
+**Option B — change the RLS policies on the BookKase Supabase project.**
+Replace `auth.uid()` in the policies for `user_books`, `reading_plan`, `reading_journal_entries`, `books`, and any other companion-touched table with:
 
-CORS for `/api/companion/:path*` is now live on BookKase, so the cross-origin PATCH should clear preflight. If a preflight still fails, it surfaces as a network error (queued offline) and the follow-up is to proxy the call through a server function in this app.
+```sql
+(auth.jwt() ->> 'external_id')::uuid
+```
+
+More edits, and every future table has to remember the same idiom, but it avoids touching the token shape that BookKase web may already rely on.
+
+## Verification after the fix
+
+Reload Reading and confirm the same request returns `200` with rows instead of `400 / 22P02`, and that the console `[bookkase] active books load failed` entries stop.
+
+## What this plan does not change
+
+No companion source changes are proposed. If you want a defensive touch afterwards, the one worth adding is a clearer error message on the Reading screen when the response code is `22P02` ("your library sign-in isn't linked yet") instead of the generic "We couldn't reach your library" — say the word and I'll add it.

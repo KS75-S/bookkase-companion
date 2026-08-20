@@ -9,30 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
-import { Route as AppReadingRouteImport } from './routes/_app.reading'
-import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppJourneyRouteImport } from './routes/_app.journey'
+import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppReadingRouteImport } from './routes/_app.reading'
+import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignInSplatRoute = SignInSplatRouteImport.update({
-  id: '/sign-in/$',
-  path: '/sign-in/$',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppReadingRoute = AppReadingRouteImport.update({
-  id: '/reading',
-  path: '/reading',
+const AppJourneyRoute = AppJourneyRouteImport.update({
+  id: '/journey',
+  path: '/journey',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -40,10 +35,15 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
-const AppJourneyRoute = AppJourneyRouteImport.update({
-  id: '/journey',
-  path: '/journey',
+const AppReadingRoute = AppReadingRouteImport.update({
+  id: '/reading',
+  path: '/reading',
   getParentRoute: () => AppRoute,
+} as any)
+const SignInSplatRoute = SignInSplatRouteImport.update({
+  id: '/sign-in/$',
+  path: '/sign-in/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -92,13 +92,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -106,18 +99,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sign-in/$': {
-      id: '/sign-in/$'
-      path: '/sign-in/$'
-      fullPath: '/sign-in/$'
-      preLoaderRoute: typeof SignInSplatRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/reading': {
-      id: '/_app/reading'
-      path: '/reading'
-      fullPath: '/reading'
-      preLoaderRoute: typeof AppReadingRouteImport
+    '/_app/journey': {
+      id: '/_app/journey'
+      path: '/journey'
+      fullPath: '/journey'
+      preLoaderRoute: typeof AppJourneyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -127,12 +120,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/journey': {
-      id: '/_app/journey'
-      path: '/journey'
-      fullPath: '/journey'
-      preLoaderRoute: typeof AppJourneyRouteImport
+    '/_app/reading': {
+      id: '/_app/reading'
+      path: '/reading'
+      fullPath: '/reading'
+      preLoaderRoute: typeof AppReadingRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/sign-in/$': {
+      id: '/sign-in/$'
+      path: '/sign-in/$'
+      fullPath: '/sign-in/$'
+      preLoaderRoute: typeof SignInSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }

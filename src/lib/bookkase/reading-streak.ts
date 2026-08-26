@@ -41,7 +41,7 @@ export async function fetchReadingStreak(args: {
   if (res.ok) {
     try {
       const json = (await res.json()) as Partial<ReadingStreak>;
-      return {
+      const result: StreakResult = {
         ok: true,
         streak: {
           currentStreak: Number(json.currentStreak) || 0,
@@ -50,9 +50,20 @@ export async function fetchReadingStreak(args: {
           activityMap: json.activityMap ?? [],
         },
       };
+      if (import.meta.env.DEV) {
+        console.info("[bookkase] reading streak response", { status: res.status, result });
+      }
+      return result;
     } catch {
+      if (import.meta.env.DEV) {
+        console.warn("[bookkase] reading streak returned invalid JSON", { status: res.status });
+      }
       return { ok: false, kind: "unknown", status: res.status };
     }
+  }
+
+  if (import.meta.env.DEV) {
+    console.warn("[bookkase] reading streak request failed", { status: res.status });
   }
 
   if (res.status === 401) return { ok: false, kind: "unauthorized", status: 401 };

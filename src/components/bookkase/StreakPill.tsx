@@ -22,7 +22,7 @@ export function StreakPill() {
     if (!isSignedIn || inFlight.current) return;
     if (Date.now() < backoffUntil.current) return;
     inFlight.current = true;
-    setState((currentState) => (streak ? currentState : "loading"));
+    setState("loading");
     try {
       let sessionToken: string | null = null;
       try {
@@ -64,7 +64,7 @@ export function StreakPill() {
     } finally {
       inFlight.current = false;
     }
-  }, [isSignedIn, getToken, streak]);
+  }, [isSignedIn, getToken]);
 
   useEffect(() => {
     load();

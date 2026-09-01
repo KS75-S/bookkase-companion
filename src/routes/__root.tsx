@@ -126,7 +126,11 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/sign-in">
+    <ClerkProvider
+      publishableKey={CLERK_PUBLISHABLE_KEY}
+      proxyUrl={CLERK_PROXY_URL}
+      afterSignOutUrl="/sign-in"
+    >
       <SupabaseProvider>
         <QueryClientProvider client={queryClient}>
           <Outlet />

@@ -134,7 +134,7 @@ export async function patchBookMetadata(args: {
   if (status === 400) {
     const text = await res.text().catch(() => "");
     console.error("[bookkase] book-metadata 400 — bad request from companion", text);
-    return { ok: false, kind: "badRequest", status, message: text };
+    return { ok: false, kind: "badRequest", status };
   }
   if (status === 403 || status === 404) return { ok: false, kind: "notFound", status };
   if (status === 429) {

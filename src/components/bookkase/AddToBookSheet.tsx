@@ -193,11 +193,7 @@ export function AddToBookSheet({ open, onOpenChange, ub }: Props) {
         setError({ message: "BookKase address isn't set — add it on Profile." });
         break;
       case "badRequest":
-        setError({
-          message: res.message
-            ? `Couldn't save these details: ${res.message}`
-            : "Couldn't save these details. Please try again.",
-        });
+        setError({ message: "Couldn't save these details. Please try again." });
         break;
 
       default:

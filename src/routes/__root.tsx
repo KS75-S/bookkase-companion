@@ -12,7 +12,7 @@ import { ClerkProvider } from "@clerk/clerk-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { CLERK_PUBLISHABLE_KEY } from "../lib/bookkase/config";
+import { CLERK_PUBLISHABLE_KEY, CLERK_PROXY_URL } from "../lib/bookkase/config";
 import { SupabaseProvider } from "../lib/bookkase/supabase-provider";
 import { Toaster } from "../components/ui/sonner";
 

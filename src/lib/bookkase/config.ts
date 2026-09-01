@@ -12,6 +12,28 @@ export const CLERK_PUBLISHABLE_KEY =
   (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim() ||
   "pk_live_Y2xlcmsuYm9va2thc2UudmVyY2VsLmFwcCQ";
 
+/**
+ * Clerk Frontend API proxy. The production Clerk instance is fronted by the
+ * BookKase web app at https://bookkase.vercel.app/__clerk, so browser auth
+ * requests go through that proxy (cross-origin — the proxy must send CORS
+ * headers allowing this app's origin).
+ *
+ * Only used with the production key. When VITE_CLERK_PUBLISHABLE_KEY points
+ * at the test instance (local dev / preview), the proxy is skipped unless
+ * VITE_CLERK_PROXY_URL is explicitly set.
+ */
+const CLERK_PROXY_URL_PRODUCTION = "https://bookkase.vercel.app/__clerk";
+
+const proxyOverride = (
+  import.meta.env.VITE_CLERK_PROXY_URL as string | undefined
+)?.trim();
+
+export const CLERK_PROXY_URL: string | undefined =
+  proxyOverride ||
+  (CLERK_PUBLISHABLE_KEY.startsWith("pk_live_")
+    ? CLERK_PROXY_URL_PRODUCTION
+    : undefined);
+
 export const SUPABASE_URL = "https://dyptjrvaixoknyrcksfw.supabase.co";
 
 export const SUPABASE_ANON_KEY =

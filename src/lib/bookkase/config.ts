@@ -3,8 +3,14 @@
  * The Clerk Publishable Key and Supabase anon key are both client-side by design.
  */
 
+/**
+ * Clerk publishable key. Defaults to the production instance;
+ * set VITE_CLERK_PUBLISHABLE_KEY to override (e.g. with the test key)
+ * for local development or preview builds.
+ */
 export const CLERK_PUBLISHABLE_KEY =
-  "pk_test_dmFsdWVkLWhvcnNlLTQyLmNsZXJrLmFjY291bnRzLmRldiQ";
+  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim() ||
+  "pk_live_Y2xlcmsuYm9va2thc2UudmVyY2VsLmFwcCQ";
 
 export const SUPABASE_URL = "https://dyptjrvaixoknyrcksfw.supabase.co";
 
